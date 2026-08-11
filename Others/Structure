@@ -1,83 +1,379 @@
 InfraMonitor/
 │
-├── agent/
-│   ├── inframonitor_agent/
-│   │   ├── __init__.py
-│   │   ├── main.py
-│   │   │
-│   │   ├── collectors/
-│   │   │   ├── __init__.py
-│   │   │   ├── system.py
-│   │   │   ├── cpu.py
-│   │   │   ├── memory.py
-│   │   │   ├── gpu.py
-│   │   │   ├── storage.py
-│   │   │   ├── network.py
-│   │   │   └── security.py
-│   │   │
-│   │   ├── transport/
-│   │   │   ├── __init__.py
-│   │   │   └── client.py
-│   │   │
-│   │   └── config.py
+├── agent/                                      # Software running on every monitored server
 │   │
-│   └── tests/
-│       ├── test_system.py
-│       ├── test_cpu.py
-│       └── test_memory.py
+│   ├── inframonitor_agent/
+│   │
+│   │   ├── main.py                             # Agent entry point; coordinates collection and execution
+│   │   │   ├── initialize agent                # Start the agent and prepare required components
+│   │   │   ├── load configuration               # Load server/API/collection settings
+│   │   │   ├── initialize collectors            # Prepare system, CPU, network, security collectors
+│   │   │   ├── collect inventory                # Collect relatively static hardware/system information
+│   │   │   ├── collect metrics                  # Collect changing CPU/RAM/disk/network statistics
+│   │   │   ├── collect security events          # Collect security-related information and events
+│   │   │   ├── build payload                    # Combine collected data into a structured object
+│   │   │   ├── send payload to backend          # Upload information to centralized InfraMonitor
+│   │   │   └── schedule periodic collection    # Continuously monitor the server
+│   │   │
+│   │   ├── config.py                            # Central configuration instead of hard-coding settings
+│   │   │   ├── backend URL                      # Where the agent sends collected information
+│   │   │   ├── agent ID                         # Uniquely identify each monitored server
+│   │   │   ├── API authentication               # Secure agent-to-backend communication
+│   │   │   ├── collection intervals             # Control how frequently data is collected
+│   │   │   └── logging configuration             # Configure agent logging behavior
+│   │   │
+│   │   ├── logger.py                            # Consistent logging for troubleshooting and auditing
+│   │   │   ├── console logging                  # Useful during development/debugging
+│   │   │   ├── file logging                    # Preserve logs for later investigation
+│   │   │   ├── log levels                      # DEBUG/INFO/WARNING/ERROR control
+│   │   │   └── log rotation                     # Prevent logs from consuming the disk
+│   │   │
+│   │   │
+│   │   ├── collectors/                          # Modules responsible only for collecting information
+│   │   │   │
+│   │   │   ├── system.py                        # General server identity and OS information
+│   │   │   │   ├── hostname                     # Identify the machine
+│   │   │   │   ├── operating system             # Know which OS the agent is running on
+│   │   │   │   ├── OS version                   # Useful for inventory and compatibility
+│   │   │   │   ├── kernel version               # Important for Linux/security tracking
+│   │   │   │   ├── architecture                 # x86_64/ARM/etc.; determines compatibility
+│   │   │   │   ├── manufacturer                 # Physical hardware manufacturer
+│   │   │   │   ├── system model                # Identify exact hardware model
+│   │   │   │   ├── serial number               # Unique hardware identification
+│   │   │   │   ├── physical / virtual machine  # Determine whether host is bare metal or VM
+│   │   │   │   ├── virtualization platform     # VMware/KVM/VirtualBox/etc. when detectable
+│   │   │   │   ├── boot time                   # Determine when the system last started
+│   │   │   │   └── uptime                      # Detect recently restarted systems
+│   │   │
+│   │   │   ├── cpu.py                           # CPU hardware and performance information
+│   │   │   │   ├── CPU manufacturer             # Intel/AMD/ARM/etc.
+│   │   │   │   ├── CPU model                   # Identify exact processor
+│   │   │   │   ├── physical cores              # Understand physical processing capacity
+│   │   │   │   ├── logical cores / threads     # Understand available CPU threads
+│   │   │   │   ├── base frequency              # CPU's nominal operating frequency
+│   │   │   │   ├── current frequency           # Current operating frequency
+│   │   │   │   ├── maximum frequency           # Maximum reported CPU frequency
+│   │   │   │   ├── total utilization            # Overall CPU load
+│   │   │   │   ├── per-core utilization         # Identify overloaded individual cores
+│   │   │   │   ├── load average                # Linux workload indicator
+│   │   │   │   └── CPU temperature             # Detect thermal problems when available
+│   │   │
+│   │   │   ├── memory.py                        # RAM and virtual memory information
+│   │   │   │   ├── total RAM                   # Total installed memory
+│   │   │   │   ├── used RAM                    # Current memory consumption
+│   │   │   │   ├── available RAM               # Memory available to applications
+│   │   │   │   ├── RAM utilization             # Easy health metric for dashboard/alerts
+│   │   │   │   ├── swap total                  # Total swap capacity
+│   │   │   │   ├── swap used                   # Current swap usage
+│   │   │   │   ├── swap utilization            # Detect memory pressure
+│   │   │   │   ├── memory modules              # Physical RAM inventory
+│   │   │   │   ├── module manufacturer         # Identify RAM vendor
+│   │   │   │   ├── module model                # Identify RAM module
+│   │   │   │   ├── module capacity             # Capacity of each module
+│   │   │   │   └── RAM speed                   # Memory operating speed
+│   │   │
+│   │   │   ├── gpu.py                           # Optional GPU inventory and monitoring
+│   │   │   │   ├── GPU detection               # Determine whether a GPU exists
+│   │   │   │   ├── GPU manufacturer            # NVIDIA/AMD/Intel/etc.
+│   │   │   │   ├── GPU model                   # Identify exact GPU
+│   │   │   │   ├── GPU memory / VRAM            # Determine graphics memory capacity
+│   │   │   │   ├── GPU utilization             # Monitor GPU workload
+│   │   │   │   ├── VRAM utilization             # Monitor GPU memory consumption
+│   │   │   │   ├── GPU temperature             # Detect thermal problems
+│   │   │   │   ├── GPU power usage             # Monitor GPU power consumption
+│   │   │   │   └── driver version              # Useful for compatibility/security
+│   │   │
+│   │   │   ├── storage.py                       # Disk, partition and filesystem inventory
+│   │   │   │   ├── physical disks              # Discover installed storage devices
+│   │   │   │   ├── disk device name            # /dev/sda, /dev/nvme0n1, etc.
+│   │   │   │   ├── manufacturer                # Identify disk vendor
+│   │   │   │   ├── model                       # Identify exact storage model
+│   │   │   │   ├── serial number               # Identify individual physical disk
+│   │   │   │   ├── SSD / HDD                   # Determine storage technology
+│   │   │   │   ├── interface type              # SATA/NVMe/USB/etc.
+│   │   │   │   ├── capacity                    # Total disk capacity
+│   │   │   │   ├── partitions                  # Discover storage layout
+│   │   │   │   ├── partition name              # Identify individual partitions
+│   │   │   │   ├── filesystem                  # ext4/xfs/NTFS/etc.
+│   │   │   │   ├── mount point                 # Where the filesystem is mounted
+│   │   │   │   ├── partition capacity          # Total filesystem capacity
+│   │   │   │   ├── used space                  # Current storage consumption
+│   │   │   │   ├── free space                  # Remaining capacity
+│   │   │   │   ├── utilization                 # Percentage used
+│   │   │   │   ├── read throughput             # Monitor storage performance
+│   │   │   │   ├── write throughput            # Monitor storage performance
+│   │   │   │   └── SMART health                # Detect disk health problems
+│   │   │
+│   │   │   ├── network.py                       # Network adapter inventory and traffic monitoring
+│   │   │   │   ├── interfaces                  # Discover all network adapters
+│   │   │   │   ├── Ethernet / Wi-Fi            # Identify interface type
+│   │   │   │   ├── interface name              # eth0/wlan0/etc.
+│   │   │   │   ├── manufacturer                # Identify network hardware vendor
+│   │   │   │   ├── adapter model               # Identify exact network adapter
+│   │   │   │   ├── MAC address                 # Unique interface identifier
+│   │   │   │   ├── IPv4 addresses              # Record IPv4 configuration
+│   │   │   │   ├── IPv6 addresses              # Record IPv6 configuration
+│   │   │   │   ├── link state                  # Determine whether interface is up/down
+│   │   │   │   ├── link speed                  # Maximum/current negotiated speed
+│   │   │   │   ├── RX bytes                    # Total received traffic
+│   │   │   │   ├── TX bytes                    # Total transmitted traffic
+│   │   │   │   ├── total RX                    # Human-readable accumulated RX traffic
+│   │   │   │   ├── total TX                    # Human-readable accumulated TX traffic
+│   │   │   │   ├── packets received            # Network traffic statistics
+│   │   │   │   ├── packets transmitted         # Network traffic statistics
+│   │   │   │   ├── RX errors                   # Detect receiving problems
+│   │   │   │   ├── TX errors                   # Detect transmission problems
+│   │   │   │   ├── dropped packets             # Detect packet loss/issues
+│   │   │   │   └── Wi-Fi details               # Additional wireless information
+│   │   │       │   ├── SSID                   # Connected wireless network
+│   │   │       │   ├── signal strength         # Wi-Fi quality
+│   │   │       │   ├── frequency               # 2.4/5/6 GHz information
+│   │   │       │   └── channel                 # Wireless channel
+│   │   │
+│   │   │   ├── firewall.py                      # Determine host firewall/security controls
+│   │   │   │   ├── firewall detection          # Find which firewall system exists
+│   │   │   ├── UFW status                      # Ubuntu firewall status
+│   │   │   ├── iptables status                 # Legacy Linux firewall status
+│   │   │   ├── nftables status                 # Modern Linux firewall status
+│   │   │   ├── firewalld status                # Common enterprise Linux firewall
+│   │   │   ├── active firewall                 # Identify which firewall is actually active
+│   │   │   ├── firewall enabled / disabled     # Basic security posture
+│   │   │   ├── default inbound policy          # Understand default incoming behavior
+│   │   │   ├── default outbound policy         # Understand outgoing behavior
+│   │   │   └── firewall rules                  # Inventory configured rules
+│   │   │
+│   │   │   ├── ports.py                         # Discover services exposed by the server
+│   │   │   │   ├── listening TCP ports         # Find TCP services listening for connections
+│   │   │   │   ├── listening UDP ports         # Find UDP services
+│   │   │   │   ├── local address               # Determine which interfaces expose service
+│   │   │   │   ├── port number                 # Identify service port
+│   │   │   │   ├── protocol                    # TCP/UDP
+│   │   │   │   ├── process ID                  # Identify responsible process
+│   │   │   │   ├── process name                # Identify application
+│   │   │   │   ├── service identification     # Map port to known service
+│   │   │   │   ├── SSH                          # Important remote administration service
+│   │   │   │   ├── HTTP                         # Web service detection
+│   │   │   │   ├── HTTPS                        # Secure web service detection
+│   │   │   │   ├── DNS                          # DNS service detection
+│   │   │   │   ├── FTP                          # Legacy file transfer service
+│   │   │   │   ├── SMTP                         # Mail service detection
+│   │   │   │   ├── SMB                          # Windows file-sharing service
+│   │   │   │   ├── RDP                          # Remote Desktop service
+│   │   │   │   ├── VNC                          # Remote graphical access
+│   │   │   │   ├── PostgreSQL                   # Database service
+│   │   │   │   ├── MySQL                       # Database service
+│   │   │   │   ├── Redis                       # Cache/database service
+│   │   │   │   └── MongoDB                     # Database service
+│   │   │
+│   │   │   ├── users.py                         # Local account and privilege inventory
+│   │   │   │   ├── local users                 # Discover all local accounts
+│   │   │   │   ├── username                    # Account identity
+│   │   │   │   ├── UID                         # Linux user identifier
+│   │   │   │   ├── GID                         # Primary group identifier
+│   │   │   │   ├── home directory              # User environment location
+│   │   │   │   ├── login shell                 # Determine how account can log in
+│   │   │   │   ├── account status              # Active/locked/etc.
+│   │   │   │   ├── password expiration         # Identify account lifecycle issues
+│   │   │   │   ├── local groups                # Discover available groups
+│   │   │   │   ├── user → group membership     # Understand user permissions
+│   │   │   │   ├── privileged users            # Identify administrative accounts
+│   │   │   │   ├── sudo users                  # Identify sudo-capable accounts
+│   │   │   │   ├── service accounts            # Distinguish applications from humans
+│   │   │   │   └── locked accounts             # Identify disabled accounts
+│   │   │
+│   │   │   ├── permissions.py                   # Security-focused permission auditing
+│   │   │   │   ├── sudo configuration           # Determine who can elevate privileges
+│   │   │   │   ├── administrative privileges   # Find privileged access
+│   │   │   │   ├── SUID files                  # Find programs running with elevated UID
+│   │   │   │   ├── SGID files                  # Find programs running with elevated GID
+│   │   │   │   ├── critical file permissions   # Audit sensitive system files
+│   │   │   │   ├── /etc/passwd permissions     # Protect account database
+│   │   │   │   ├── /etc/shadow permissions     # Protect password hashes
+│   │   │   │   ├── SSH configuration permissions # Protect remote access configuration
+│   │   │   │   └── Docker socket permissions   # Detect potentially dangerous Docker access
+│   │   │
+│   │   │   └── logins.py                        # Authentication and session auditing
+│   │   │       ├── SSH successful logins       # Track successful remote access
+│   │   │       ├── SSH failed logins           # Detect authentication attacks
+│   │   │       ├── local logins                # Track console/local authentication
+│   │   │       ├── login timestamp             # When authentication occurred
+│   │   │       ├── logout timestamp            # When session ended
+│   │   │       ├── username                    # Who authenticated
+│   │   │       ├── source IP                   # Where remote login originated
+│   │   │       ├── session type                # SSH/console/etc.
+│   │   │       ├── authentication method      # Password/key/etc. where available
+│   │   │       ├── session duration            # Measure how long user was active
+│   │   │       └── active sessions             # Show currently logged-in users
+│   │   │
+│   │   │
+│   │   ├── models/                              # Structured data objects returned by collectors
+│   │   │   ├── system.py                        # Defines system information structure
+│   │   │   ├── cpu.py                           # Defines CPU data structure
+│   │   │   ├── memory.py                        # Defines RAM data structure
+│   │   │   ├── gpu.py                           # Defines GPU data structure
+│   │   │   ├── storage.py                       # Defines disk/partition structures
+│   │   │   ├── network.py                       # Defines network interface structure
+│   │   │   └── security.py                      # Defines security-related structures
+│   │   │
+│   │   ├── transport/                           # Communication between agent and backend
+│   │   │   ├── client.py                        # HTTP client responsible for API communication
+│   │   │   │   ├── register agent              # Introduce new server to backend
+│   │   │   │   ├── send inventory              # Upload hardware/system information
+│   │   │   │   ├── send metrics                # Upload performance metrics
+│   │   │   │   ├── send security events        # Upload security information/events
+│   │   │   │   ├── authentication              # Authenticate agent
+│   │   │   │   ├── retry handling              # Recover from temporary network failures
+│   │   │   │   └── connection error handling   # Prevent agent crashes
+│   │   │   │
+│   │   │   └── serializers.py                  # Convert Python objects into API payloads
+│   │   │
+│   │   └── utils/
+│   │       ├── commands.py                     # Safe wrapper around Linux commands
+│   │       │   ├── safe command execution      # Centralize subprocess handling
+│   │       │   ├── timeout handling            # Prevent hanging commands
+│   │       │   └── error handling              # Handle unavailable commands gracefully
+│   │       │
+│   │       └── platform.py                     # OS/platform-specific helpers
+│   │           ├── Linux detection             # Ensure supported platform
+│   │           ├── architecture detection     # x86/ARM/etc.
+│   │           └── platform compatibility      # Keep code portable
+│   │
+│   └── tests/                                  # Automated tests for the agent
+│       ├── test_system.py                      # Test OS/system collection
+│       ├── test_cpu.py                         # Test CPU collector
+│       ├── test_memory.py                      # Test RAM collector
+│       ├── test_gpu.py                         # Test GPU collector
+│       ├── test_storage.py                     # Test storage collector
+│       ├── test_network.py                     # Test network collector
+│       ├── test_firewall.py                    # Test firewall detection
+│       ├── test_ports.py                       # Test listening-port detection
+│       ├── test_users.py                       # Test account collection
+│       └── test_logins.py                      # Test login-event collection
 │
-├── backend/
+│
+├── backend/                                    # Central server receiving data from all agents
+│   │
 │   ├── app/
-│   │   ├── __init__.py
-│   │   ├── main.py
+│   │
+│   │   ├── main.py                             # Starts the FastAPI application
+│   │   │   ├── initialize FastAPI             # Create application
+│   │   │   ├── register API routes             # Connect endpoints
+│   │   │   └── startup / shutdown              # Manage application lifecycle
+│   │   │
+│   │   ├── config.py                            # Backend configuration
+│   │   │   ├── database configuration         # PostgreSQL connection settings
+│   │   │   ├── API configuration               # Server/API settings
+│   │   │   └── security configuration         # Authentication/security settings
 │   │   │
 │   │   ├── api/
-│   │   │   ├── __init__.py
-│   │   │   ├── inventory.py
-│   │   │   ├── metrics.py
-│   │   │   └── security.py
+│   │   │   ├── agents.py                       # Agent management API
+│   │   │   ├── inventory.py                    # Hardware/system ingestion API
+│   │   │   ├── metrics.py                      # Performance metrics API
+│   │   │   ├── security.py                     # Security data API
+│   │   │   └── logins.py                       # Authentication event API
 │   │   │
-│   │   ├── models/
-│   │   │   ├── __init__.py
-│   │   │   ├── server.py
-│   │   │   ├── hardware.py
-│   │   │   └── metrics.py
+│   │   ├── services/                           # Business logic separated from API endpoints
+│   │   │   ├── inventory.py                    # Process and update inventory
+│   │   │   ├── metrics.py                      # Store/process performance data
+│   │   │   ├── security.py                     # Process security information
+│   │   │   └── alerts.py                       # Generate alerts based on conditions
 │   │   │
-│   │   ├── services/
-│   │   │   ├── __init__.py
-│   │   │   ├── inventory.py
-│   │   │   ├── metrics.py
-│   │   │   └── security.py
+│   │   ├── models/                             # Database/data models
+│   │   │   ├── agent.py                        # Agent registration data
+│   │   │   ├── server.py                       # Server/asset information
+│   │   │   ├── hardware.py                     # Hardware inventory
+│   │   │   ├── metrics.py                      # Historical performance data
+│   │   │   └── security.py                     # Security events/information
 │   │   │
-│   │   ├── database/
-│   │   │   ├── __init__.py
-│   │   │   ├── connection.py
-│   │   │   └── migrations/
-│   │   │
-│   │   └── config.py
+│   │   └── database/
+│   │       ├── connection.py                   # Database connection/session management
+│   │       ├── repositories/                   # Database access layer
+│   │       │   ├── agents.py                   # Agent CRUD operations
+│   │       │   ├── servers.py                  # Server CRUD operations
+│   │       │   ├── metrics.py                  # Metrics storage/retrieval
+│   │       │   └── security.py                 # Security data storage/retrieval
+│   │       └── migrations/                      # Safely evolve database schema
 │   │
-│   └── tests/
+│   └── tests/                                  # Backend automated tests
+│       ├── test_agents.py
 │       ├── test_inventory.py
-│       └── test_metrics.py
+│       ├── test_metrics.py
+│       └── test_security.py
 │
-├── dashboard/
+│
+├── dashboard/                                  # Web UI for viewing InfraMonitor
+│   │
+│   ├── src/
+│   │   ├── components/
+│   │   │   ├── ServerCard                    # Quick server health overview
+│   │   │   ├── MetricChart                   # Visualize historical metrics
+│   │   │   ├── StatusIndicator               # Online/warning/offline status
+│   │   │   ├── HardwareTable                 # Display hardware inventory
+│   │   │   └── SecurityStatus                # Display security posture
+│   │   │
+│   │   ├── pages/
+│   │   │   ├── Dashboard                     # Overall infrastructure overview
+│   │   │   ├── Servers                       # List all monitored servers
+│   │   │   ├── ServerDetails                  # Detailed server information
+│   │   │   ├── Network                       # Network information
+│   │   │   ├── Security                      # Security overview
+│   │   │   ├── Ports                         # Open/listening services
+│   │   │   ├── Users                         # Local accounts/privileges
+│   │   │   └── Logins                        # Authentication history
+│   │   │
+│   │   └── services/
+│   │       └── api.py                        # Dashboard → backend communication
+│   │
+│   └── tests/                                 # Dashboard tests
+│
+│
+├── deploy/                                    # Deployment and infrastructure definitions
+│   │
+│   ├── docker/
+│   │   ├── agent/
+│   │   │   └── Dockerfile                     # Package agent into container
+│   │   ├── backend/
+│   │   │   └── Dockerfile                     # Package API into container
+│   │   └── dashboard/
+│   │       └── Dockerfile                     # Package dashboard into container
+│   │
+│   ├── compose/
+│   │   └── docker-compose.yml                 # Run entire stack locally
+│   │
+│   ├── kubernetes/
+│   │   ├── namespace.yaml                     # Isolate InfraMonitor resources
+│   │   ├── agent.yaml                         # Deploy agents
+│   │   ├── backend.yaml                       # Deploy API
+│   │   ├── database.yaml                      # Deploy database
+│   │   ├── services.yaml                      # Internal/external networking
+│   │   ├── configmap.yaml                     # Non-secret configuration
+│   │   ├── secrets.yaml                       # Sensitive configuration
+│   │   └── ingress.yaml                       # External HTTP access
+│   │
+│   └── terraform/
+│       ├── providers.tf                       # Define infrastructure provider
+│       ├── main.tf                            # Main infrastructure definition
+│       ├── variables.tf                       # Reusable configuration
+│       ├── outputs.tf                         # Export useful infrastructure values
+│       └── modules/                            # Reusable Terraform components
+│
 │
 ├── docs/
-│   ├── architecture.md
-│   ├── api.md
-│   └── development.md
+│   ├── architecture.md                        # Explain system architecture and data flow
+│   ├── agent.md                               # Explain agent design
+│   ├── api.md                                 # Document API endpoints
+│   ├── security.md                            # Document security architecture
+│   └── development.md                         # Explain how developers run the project
 │
-├── deploy/
-│   ├── docker/
-│   ├── kubernetes/
-│   └── terraform/
 │
 ├── .github/
 │   └── workflows/
-│       ├── tests.yml
-│       └── docker.yml
+│       ├── tests.yml                          # Automatically run tests
+│       ├── lint.yml                           # Automatically check code quality
+│       ├── security.yml                       # Automated security scanning
+│       └── docker.yml                         # Build/test Docker images
 │
-├── .gitignore
-├── README.md
-├── LICENSE
-└── pyproject.toml
+├── .gitignore                                  # Prevent unwanted files from entering Git
+├── README.md                                   # Project overview and documentation
+├── LICENSE                                    # Define project usage rights
+└── pyproject.toml                             # Python dependencies and tooling configuration
