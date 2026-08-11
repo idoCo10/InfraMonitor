@@ -6,8 +6,10 @@ Priority	Task
 🔴 High	Implement application logging
 🟡 Medium	Add environment-based configuration
 🟡 Medium	Create initial automated test structure
-🖥️ 2. Agent — System Inventory
 
+
+
+🖥️ 2. Agent — System Inventory
 The agent is the Python application running on each monitored server.
 
 Server
@@ -17,6 +19,7 @@ Priority	Task
 🔴 High	Detect kernel version
 🟡 Medium	Detect physical vs virtual machine
 🟡 Medium	Collect system manufacturer and model
+
 CPU
 Priority	Task
 🔴 High	Collect CPU model
@@ -24,18 +27,21 @@ Priority	Task
 🔴 High	Collect CPU utilization
 🟡 Medium	Collect CPU frequency
 🟢 Low	Collect per-core utilization
+
 GPU
 Priority	Task
 🟡 Medium	Detect available GPUs
 🟡 Medium	Collect GPU model and VRAM
 🟡 Medium	Collect GPU utilization
 🟢 Low	Collect GPU temperature and power usage
+
 Memory
 Priority	Task
 🔴 High	Collect total RAM
 🔴 High	Collect RAM utilization
 🟡 Medium	Collect RAM module information
 🟡 Medium	Collect RAM speed
+
 Storage
 Priority	Task
 🔴 High	Discover storage devices
@@ -44,6 +50,9 @@ Priority	Task
 🟡 Medium	Detect SSD vs HDD
 🟡 Medium	Collect disk model
 🟢 Low	Collect disk interface and speed information
+
+
+
 🌐 3. Agent — Networking
 Priority	Task
 🔴 High	Discover network interfaces
@@ -54,9 +63,10 @@ Priority	Task
 🟡 Medium	Calculate total RX/TX traffic
 🟡 Medium	Collect interface state (up/down)
 🟢 Low	Collect network adapter model
-🔐 4. Agent — Security Auditing
 
-This is where I'd make the project stand out.
+
+
+🔐 4. Agent — Security Auditing
 
 Firewall
 Priority	Task
@@ -64,6 +74,7 @@ Priority	Task
 🔴 High	Determine firewall status
 🟡 Medium	Collect firewall rules
 🟡 Medium	Detect iptables/nftables/ufw/firewalld configuration
+
 Open Ports
 Priority	Task
 🔴 High	Discover listening TCP/UDP ports
@@ -73,27 +84,28 @@ Priority	Task
 🟡 Medium	Create configurable monitored-port list
 
 I'd include at least:
-
-22    SSH
-21    FTP
-23    Telnet
-25    SMTP
-53    DNS
-80    HTTP
-110   POP3
-139   NetBIOS
-143   IMAP
-443   HTTPS
-445   SMB
-3389  RDP
-5432  PostgreSQL
-3306  MySQL
-5900  VNC
-6379  Redis
-
+  22    SSH
+  21    FTP
+  23    Telnet
+  25    SMTP
+  53    DNS
+  80    HTTP
+  110   POP3
+  139   NetBIOS
+  143   IMAP
+  443   HTTPS
+  445   SMB
+  3389  RDP
+  5432  PostgreSQL
+  3306  MySQL
+  5900  VNC
+  6379  Redis
 You don't necessarily need to scan these ports manually—the agent can discover all listening ports and then identify the important ones.
 
+
+
 👤 5. User & Login Auditing
+
 Users
 Priority	Task
 🔴 High	Collect local users
@@ -102,6 +114,7 @@ Priority	Task
 🟡 Medium	Identify privileged users
 🟡 Medium	Identify accounts with sudo privileges
 🟢 Low	Detect inactive/expired accounts
+
 Authentication
 Priority	Task
 🔴 High	Collect successful SSH logins
@@ -112,8 +125,10 @@ Priority	Task
 🟡 Medium	Record source IP
 🟡 Medium	Determine session duration
 🟢 Low	Detect suspicious login patterns
-🧠 6. Agent → Backend
 
+
+
+🧠 6. Agent → Backend
 This is where your individual server becomes part of the centralized system.
 
 Priority	Task
@@ -127,6 +142,9 @@ Priority	Task
 🟡 Medium	Implement periodic data collection
 🟡 Medium	Implement retry mechanism
 🟡 Medium	Handle backend connectivity failures
+
+
+
 🗄️ 7. Database
 Priority	Task
 🔴 High	Design PostgreSQL database schema
@@ -138,7 +156,11 @@ Priority	Task
 🟡 Medium	Create login event tables
 🟡 Medium	Implement database migrations
 🟡 Medium	Implement historical metrics retention
+
+
+
 🖥️ 8. Web Dashboard
+
 Overview
 Priority	Task
 🔴 High	Create dashboard application
@@ -147,6 +169,7 @@ Priority	Task
 🔴 High	Display CPU/RAM/Disk utilization
 🟡 Medium	Display network traffic
 🟡 Medium	Display server count and status
+
 Server Details
 Priority	Task
 🔴 High	Create server details page
@@ -155,14 +178,17 @@ Priority	Task
 🟡 Medium	Display storage devices
 🟡 Medium	Display security information
 🟡 Medium	Display login activity
+
 Historical Data
 Priority	Task
 🟡 Medium	Create CPU history graph
 🟡 Medium	Create RAM history graph
 🟡 Medium	Create disk history graph
 🟡 Medium	Create network traffic graph
-🚨 9. Alerting
 
+
+
+🚨 9. Alerting
 Don't build this early, but put it on the roadmap.
 
 Priority	Task
@@ -174,8 +200,10 @@ Priority	Task
 🟡 Medium	Implement security event alerts
 🟢 Low	Add Telegram notifications
 🟢 Low	Add email notifications
-🐳 10. Docker
 
+
+
+🐳 10. Docker
 Only start these after the application works normally.
 
 Priority	Task
@@ -187,6 +215,9 @@ Priority	Task
 🟡 Medium	Configure persistent database volume
 🟡 Medium	Configure Docker networking
 🟡 Medium	Create production container configuration
+
+
+
 🔄 11. CI/CD
 Priority	Task
 🔴 High	Create GitHub Actions CI pipeline
@@ -196,10 +227,10 @@ Priority	Task
 🟡 Medium	Scan Docker images with Trivy
 🟡 Medium	Push images to container registry
 🟡 Medium	Create deployment pipeline
+
+
+
 ☸️ 12. Kubernetes
-
-This is much later.
-
 Priority	Task
 🟡 Medium	Create local Kubernetes environment
 🟡 Medium	Create Agent Deployment/DaemonSet
@@ -211,49 +242,23 @@ Priority	Task
 🟢 Low	Create Helm chart
 🟢 Low	Configure Kubernetes health checks
 🟢 Low	Configure resource limits
+
+
+
 🏗️ 13. Terraform / Infrastructure as Code
-
-Later:
-
 Priority	Task
 🟢 Low	Create Terraform project
 🟢 Low	Provision development infrastructure
 🟢 Low	Provision production infrastructure
 🟢 Low	Manage networking with Terraform
 🟢 Low	Manage security rules with Terraform
+
+
+
 📊 14. Observability
-
-Eventually:
-
 Priority	Task
 🟢 Low	Expose Prometheus metrics
 🟢 Low	Deploy Prometheus
 🟢 Low	Deploy Grafana
 🟢 Low	Create infrastructure Grafana dashboard
 🟢 Low	Monitor InfraGuard itself
-🎯 But don't put all of these into "Todo"
-
-I'd actually organize your GitHub Project with Epics/Milestones:
-
-📦 Project Foundation
-🖥️ Agent
-🌐 Networking
-🔐 Security
-👤 Authentication Auditing
-🧠 Backend
-🗄️ Database
-🖥️ Dashboard
-🚨 Alerting
-🐳 Docker
-🔄 CI/CD
-☸️ Kubernetes
-🏗️ Terraform
-📊 Observability
-
-And your first sprint should contain only ~5 tasks:
-
-☐ Initialize project repository and directory structure
-☐ Create Python environment and dependency management
-☐ Create agent application skeleton
-☐ Collect hostname and OS information
-☐ Output collected information as JSON
