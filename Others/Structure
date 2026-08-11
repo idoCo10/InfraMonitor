@@ -1,0 +1,83 @@
+InfraMonitor/
+│
+├── agent/
+│   ├── inframonitor_agent/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   │
+│   │   ├── collectors/
+│   │   │   ├── __init__.py
+│   │   │   ├── system.py
+│   │   │   ├── cpu.py
+│   │   │   ├── memory.py
+│   │   │   ├── gpu.py
+│   │   │   ├── storage.py
+│   │   │   ├── network.py
+│   │   │   └── security.py
+│   │   │
+│   │   ├── transport/
+│   │   │   ├── __init__.py
+│   │   │   └── client.py
+│   │   │
+│   │   └── config.py
+│   │
+│   └── tests/
+│       ├── test_system.py
+│       ├── test_cpu.py
+│       └── test_memory.py
+│
+├── backend/
+│   ├── app/
+│   │   ├── __init__.py
+│   │   ├── main.py
+│   │   │
+│   │   ├── api/
+│   │   │   ├── __init__.py
+│   │   │   ├── inventory.py
+│   │   │   ├── metrics.py
+│   │   │   └── security.py
+│   │   │
+│   │   ├── models/
+│   │   │   ├── __init__.py
+│   │   │   ├── server.py
+│   │   │   ├── hardware.py
+│   │   │   └── metrics.py
+│   │   │
+│   │   ├── services/
+│   │   │   ├── __init__.py
+│   │   │   ├── inventory.py
+│   │   │   ├── metrics.py
+│   │   │   └── security.py
+│   │   │
+│   │   ├── database/
+│   │   │   ├── __init__.py
+│   │   │   ├── connection.py
+│   │   │   └── migrations/
+│   │   │
+│   │   └── config.py
+│   │
+│   └── tests/
+│       ├── test_inventory.py
+│       └── test_metrics.py
+│
+├── dashboard/
+│
+├── docs/
+│   ├── architecture.md
+│   ├── api.md
+│   └── development.md
+│
+├── deploy/
+│   ├── docker/
+│   ├── kubernetes/
+│   └── terraform/
+│
+├── .github/
+│   └── workflows/
+│       ├── tests.yml
+│       └── docker.yml
+│
+├── .gitignore
+├── README.md
+├── LICENSE
+└── pyproject.toml
