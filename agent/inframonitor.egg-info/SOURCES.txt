@@ -3,8 +3,10 @@ pyproject.toml
 agent/inframonitor.egg-info/PKG-INFO
 agent/inframonitor.egg-info/SOURCES.txt
 agent/inframonitor.egg-info/dependency_links.txt
+agent/inframonitor.egg-info/requires.txt
 agent/inframonitor.egg-info/top_level.txt
 agent/inframonitor_agent/__init__.py
 agent/inframonitor_agent/main.py
 agent/inframonitor_agent/collectors/__init__.py
 agent/inframonitor_agent/collectors/system.py
+tests/test_system.py

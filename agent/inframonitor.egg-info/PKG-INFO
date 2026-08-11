@@ -3,3 +3,5 @@ Name: inframonitor
 Version: 0.1.0
 Summary: Infrastructure monitoring and security visibility tool
 Requires-Python: >=3.11
+Provides-Extra: dev
+Requires-Dist: pytest; extra == "dev"
