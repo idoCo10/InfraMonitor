@@ -1,5 +1,6 @@
 import platform
 import socket
+import subprocess
 from pathlib import Path
 from datetime import timedelta
 
@@ -11,11 +12,14 @@ def get_uptime():
 
 
 def get_virtualization():
-    """Detect whether the system is running inside a virtual machine."""
     try:
-        result = Path("/sys/class/dmi/id/product_name").read_text().strip()
+        product_name = (
+            Path("/sys/class/dmi/id/product_name")
+            .read_text()
+            .strip()
+        )
     except (FileNotFoundError, PermissionError):
-        result = "Unknown"
+        product_name = "Unknown"
 
     virtual_platforms = {
         "VMware Virtual Platform": "VMware",
@@ -25,18 +29,47 @@ def get_virtualization():
         "Microsoft Corporation": "Hyper-V",
     }
 
-    for product_name, platform_name in virtual_platforms.items():
-        if product_name.lower() in result.lower():
-            return {
-                "is_virtual_machine": True,
-                "virtualization": platform_name,
-            }
+    virtualization = None
+    is_virtual_machine = False
+    vmware_tools_version = None
+
+    for platform_product, platform_name in virtual_platforms.items():
+        if platform_product.lower() in product_name.lower():
+            virtualization = platform_name
+            is_virtual_machine = True
+            break
+
+    if virtualization == "VMware":
+        commands = [
+            ["vmware-toolbox-cmd", "-v"],
+            ["vmtoolsd", "--version"],
+        ]
+
+        for cmd in commands:
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
+                    check=True,
+                )
+
+                vmware_tools_version = result.stdout.strip()
+                break
+
+            except (
+                subprocess.CalledProcessError,
+                FileNotFoundError,
+                subprocess.TimeoutExpired,
+            ):
+                pass
 
     return {
-        "is_virtual_machine": False,
-        "virtualization": None,
+        "is_virtual_machine": is_virtual_machine,
+        "virtualization": virtualization,
+        "vmware_tools_version": vmware_tools_version,
     }
-
 
 def collect_system_info():
     """Collect general system information."""
