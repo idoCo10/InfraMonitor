@@ -29,13 +29,18 @@ def test_memory_hardware():
     memory = get_memory_hardware()
 
     # Hardware information may not be available
-    # on every environment (e.g. some containers/cloud VMs).
+    # on every environment.
     if memory is None:
         return
 
+    assert "source" in memory
+    assert "reliability" in memory
     assert "modules" in memory
     assert "installed_modules" in memory
     assert "maximum_capacity" in memory
+
+    assert memory["source"] == "dmidecode"
+    assert memory["reliability"] == "best_effort"
 
     assert isinstance(memory["modules"], list)
     assert memory["installed_modules"] == len(memory["modules"])

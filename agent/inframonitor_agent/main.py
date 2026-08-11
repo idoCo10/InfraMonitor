@@ -10,11 +10,13 @@ def main():
 
     system_info = collect_system_info()
     print("=== System Information ===")
+
     for key, value in system_info.items():
         print(f"{key}: {value}")
 
     cpu_info = collect_cpu_info()
     print("\n=== CPU Information ===")
+
     for key, value in cpu_info.items():
         print(f"{key}: {value}")
 
@@ -22,8 +24,10 @@ def main():
 
     if memory_hardware:
         print("\n=== Memory Hardware ===")
-        print(f"Installed Modules: {memory_hardware['installed_modules']}")
-        print(f"Maximum Capacity:  {memory_hardware['maximum_capacity']}")
+        print(f"Source:             {memory_hardware['source']}")
+        print(f"Reliability:        {memory_hardware['reliability']}")
+        print(f"Reported Modules:   {memory_hardware['installed_modules']}")
+        print(f"Maximum Capacity:   {memory_hardware['maximum_capacity']}")
 
         for module in memory_hardware["modules"]:
             print(f"\n{module['locator']}: {module['size']}")

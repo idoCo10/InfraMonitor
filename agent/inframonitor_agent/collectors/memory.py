@@ -43,7 +43,7 @@ def get_memory_hardware():
 
     modules = []
 
-    # Extract only DMI type 17 (Memory Device) sections
+    # Split output into individual Memory Device sections
     devices = re.findall(
         r"(Handle .*?DMI type 17.*?)(?=\nHandle |\Z)",
         output,
@@ -51,7 +51,6 @@ def get_memory_hardware():
     )
 
     for device in devices:
-
         size_match = re.search(r"Size:\s+(.+)", device)
 
         if not size_match:
@@ -77,7 +76,6 @@ def get_memory_hardware():
             "locator": get_value("Locator"),
         })
 
-    # Maximum capacity
     max_capacity_match = re.search(
         r"Maximum Capacity:\s+(.+)",
         output,
@@ -90,6 +88,8 @@ def get_memory_hardware():
     )
 
     return {
+        "source": "dmidecode",
+        "reliability": "best_effort",
         "modules": modules,
         "installed_modules": len(modules),
         "maximum_capacity": max_capacity,
