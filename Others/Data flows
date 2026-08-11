@@ -1,0 +1,37 @@
+                    MONITORED SERVER
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │    Agent    │
+                    └──────┬──────┘
+                           │
+          ┌────────────────┼────────────────┐
+          │                │                │
+          ▼                ▼                ▼
+      Inventory         Metrics          Security
+          │                │                │
+          ├─ System        ├─ CPU          ├─ Firewall
+          ├─ CPU           ├─ RAM          ├─ Ports
+          ├─ Memory        ├─ Disk         ├─ Users
+          ├─ GPU           ├─ Network      ├─ Permissions
+          ├─ Storage       └─ GPU          └─ Logins
+          └─ Network
+                           │
+                           ▼
+                    transport/client.py
+                           │
+                           │ HTTPS
+                           ▼
+                    ┌─────────────┐
+                    │   FastAPI   │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │ PostgreSQL  │
+                    └──────┬──────┘
+                           │
+                           ▼
+                    ┌─────────────┐
+                    │  Dashboard  │
+                    └─────────────┘
