@@ -1,8 +1,8 @@
-# InfraGuard
+# InfraMonitor
 
 Infrastructure inventory, monitoring, and security auditing platform designed for Linux environments.
 
-InfraGuard collects hardware, operating system, network, performance, and security information from managed hosts through lightweight agents and presents the data through a centralized web dashboard.
+InfraMonitor collects hardware, operating system, network, performance, and security information from managed hosts through lightweight agents and presents the data through a centralized web dashboard.
 
 The project aims to provide a unified view of infrastructure assets, resource utilization, network activity, and basic security posture while serving as a practical DevOps and DevSecOps learning platform.
 
@@ -51,14 +51,14 @@ The project aims to provide a unified view of infrastructure assets, resource ut
 
 ```text
 +-------------------+
-|   InfraGuard      |
+|   InfraMonitor    |
 |      Agent        |
 +---------+---------+
           |
           | HTTPS / REST API
           |
 +---------v---------+
-|   InfraGuard      |
+|   InfraMonitor    |
 |      Backend      |
 +---------+---------+
           |
