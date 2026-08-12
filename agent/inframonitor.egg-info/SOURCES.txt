@@ -8,5 +8,9 @@ agent/inframonitor.egg-info/top_level.txt
 agent/inframonitor_agent/__init__.py
 agent/inframonitor_agent/main.py
 agent/inframonitor_agent/collectors/__init__.py
+agent/inframonitor_agent/collectors/cpu.py
+agent/inframonitor_agent/collectors/memory.py
 agent/inframonitor_agent/collectors/system.py
+tests/test_cpu.py
+tests/test_memory.py
 tests/test_system.py

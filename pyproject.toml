@@ -5,7 +5,8 @@ description = "Infrastructure monitoring and security visibility tool"
 requires-python = ">=3.11"
 
 dependencies = [
-    "psutil"
+    "psutil",
+    "pytest"
 ]
 
 [project.optional-dependencies]
