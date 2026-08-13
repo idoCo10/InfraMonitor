@@ -33,6 +33,16 @@ def collect_cpu_info():
 
     freq = psutil.cpu_freq()
 
+    per_core_utilization = psutil.cpu_percent(
+        interval=1,
+        percpu=True,
+    )
+
+    utilization_percent = round(
+        sum(per_core_utilization) / len(per_core_utilization),
+        1,
+    ) if per_core_utilization else 0.0
+
     return {
         "model": get_cpu_model(),
 
@@ -62,14 +72,9 @@ def collect_cpu_info():
             ),
         },
 
-        "utilization_percent": psutil.cpu_percent(
-            interval=1
-        ),
+        "utilization_percent": utilization_percent,
 
-        "per_core_utilization": psutil.cpu_percent(
-            interval=1,
-            percpu=True,
-        ),
+        "per_core_utilization": per_core_utilization,
 
         "load_average": {
             "1min": (
