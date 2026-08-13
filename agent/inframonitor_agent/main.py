@@ -199,56 +199,57 @@ def main():
     # Memory Hardware
     # =========================
 
-    memory_hardware = get_memory_hardware()
+    is_virtual_machine = system_info["virtualization"] != "None"
 
-    print("\n=== Memory Hardware ===")
+    if not is_virtual_machine:
+        memory_hardware = get_memory_hardware()
 
-    if not memory_hardware:
-        print("Unavailable (requires elevated privileges)")
-    else:
-        print(
-            f"Installed Modules: "
-            f"{memory_hardware['installed_modules']}"
-        )
+        if memory_hardware:
+            print("\n=== Memory Hardware ===")
 
-        print(
-            f"Maximum Capacity:  "
-            f"{memory_hardware['maximum_capacity'] or 'Unknown'}"
-        )
+            print(
+                f"Installed Modules: "
+                f"{memory_hardware['installed_modules']}"
+            )
 
-        for index, module in enumerate(
-            memory_hardware["modules"],
-            start=1,
-        ):
-            print(f"\nDIMM {index}")
             print(
-                f"  Size:          "
-                f"{module['size'] or 'Unknown'}"
+                f"Maximum Capacity:  "
+                f"{memory_hardware['maximum_capacity'] or 'Unknown'}"
             )
-            print(
-                f"  Type:          "
-                f"{module['type'] or 'Unknown'}"
-            )
-            print(
-                f"  Speed:         "
-                f"{module['speed'] or 'Unknown'}"
-            )
-            print(
-                f"  Config Speed:  "
-                f"{module['configured_speed'] or 'Unknown'}"
-            )
-            print(
-                f"  Manufacturer:  "
-                f"{module['manufacturer'] or 'Unknown'}"
-            )
-            print(
-                f"  Part Number:   "
-                f"{module['part_number'] or 'Unknown'}"
-            )
-            print(
-                f"  Slot:          "
-                f"{module['locator'] or 'Unknown'}"
-            )
+
+            for index, module in enumerate(
+                memory_hardware["modules"],
+                start=1,
+            ):
+                print(f"\nDIMM {index}")
+                print(
+                    f"  Size:          "
+                    f"{module['size'] or 'Unknown'}"
+                )
+                print(
+                    f"  Type:          "
+                    f"{module['type'] or 'Unknown'}"
+                )
+                print(
+                    f"  Speed:         "
+                    f"{module['speed'] or 'Unknown'}"
+                )
+                print(
+                    f"  Config Speed:  "
+                    f"{module['configured_speed'] or 'Unknown'}"
+                )
+                print(
+                    f"  Manufacturer:  "
+                    f"{module['manufacturer'] or 'Unknown'}"
+                )
+                print(
+                    f"  Part Number:   "
+                    f"{module['part_number'] or 'Unknown'}"
+                )
+                print(
+                    f"  Slot:          "
+                    f"{module['locator'] or 'Unknown'}"
+                )
 
 
     # =========================
