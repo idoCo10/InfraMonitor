@@ -289,10 +289,16 @@ def main():
         if disk.get("filesystem"):
             print(f"  Filesystem:  {disk['filesystem']}")
 
-        if disk.get("mountpoints"):
+        disk_mountpoints = [
+            mountpoint
+            for mountpoint in disk.get("mountpoints", [])
+            if mountpoint
+        ]
+
+        if disk_mountpoints:
             print(
                 f"  Mountpoints: "
-                f"{format_mountpoints(disk['mountpoints'])}"
+                f"{format_mountpoints(disk_mountpoints)}"
             )
 
         if disk.get("usage"):
