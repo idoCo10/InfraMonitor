@@ -1,0 +1,2 @@
+[console_scripts]
+inframonitor = inframonitor_agent.main:main

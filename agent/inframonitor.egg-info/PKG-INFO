@@ -4,6 +4,5 @@ Version: 0.1.0
 Summary: Infrastructure monitoring and security visibility tool
 Requires-Python: >=3.11
 Requires-Dist: psutil
-Requires-Dist: pytest
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
