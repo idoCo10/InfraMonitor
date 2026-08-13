@@ -5,20 +5,46 @@ from inframonitor_agent.collectors.memory import (
     get_memory_hardware,
 )
 from inframonitor_agent.collectors.disk import collect_disk_info
+from inframonitor_agent.collectors.network import collect_network_info
 
 
 def format_gb(bytes_value):
     return bytes_value / (1024 ** 3)
 
 
+def format_bytes(bytes_value):
+    if bytes_value < 1024:
+        return f"{bytes_value:.0f} B"
+
+    if bytes_value < 1024 ** 2:
+        return f"{bytes_value / 1024:.1f} KB"
+
+    if bytes_value < 1024 ** 3:
+        return f"{bytes_value / (1024 ** 2):.1f} MB"
+
+    return f"{bytes_value / (1024 ** 3):.2f} GB"
+
+
 def print_usage(usage, indent="       "):
     if not usage:
         return
 
-    print(f"{indent}Total:       {format_gb(usage['total_bytes']):.2f} GB")
-    print(f"{indent}Used:        {format_gb(usage['used_bytes']):.2f} GB")
-    print(f"{indent}Free:        {format_gb(usage['free_bytes']):.2f} GB")
-    print(f"{indent}Utilization: {usage['utilization_percent']:.1f}%")
+    print(
+        f"{indent}Total:       "
+        f"{format_gb(usage['total_bytes']):.2f} GB"
+    )
+    print(
+        f"{indent}Used:        "
+        f"{format_gb(usage['used_bytes']):.2f} GB"
+    )
+    print(
+        f"{indent}Free:        "
+        f"{format_gb(usage['free_bytes']):.2f} GB"
+    )
+    print(
+        f"{indent}Utilization: "
+        f"{usage['utilization_percent']:.1f}%"
+    )
 
 
 def main():
@@ -37,6 +63,7 @@ def main():
     print(f"Uptime:                   {system_info['uptime']}")
     print(f"Virtualization:           {system_info['virtualization']}")
 
+
     # =========================
     # CPU
     # =========================
@@ -45,11 +72,62 @@ def main():
 
     print("\n=== CPU Information ===")
 
-    for key, value in cpu_info.items():
-        print(f"{key}: {value}")
+    print(
+        f"Model:                 "
+        f"{cpu_info['model']}"
+    )
+
+    if system_info["virtualization"]:
+        print(
+            f"vCPUs:                 "
+            f"{cpu_info['logical_cores']}"
+        )
+    else:
+        print(
+            f"Physical Cores:        "
+            f"{cpu_info['physical_cores']}"
+        )
+        print(
+            f"Logical Cores:         "
+            f"{cpu_info['logical_cores']}"
+        )
+
+    frequency = cpu_info["frequency"]
+
+    if frequency["current_mhz"] is not None:
+        print(
+            f"Frequency:             "
+            f"{frequency['current_mhz']:.2f} MHz"
+        )
+    else:
+        print("Frequency:             Unknown")
+
+    print(
+        f"CPU Utilization:       "
+        f"{cpu_info['utilization_percent']:.1f}%"
+    )
+
+    per_core = ", ".join(
+        f"{value:.1f}%"
+        for value in cpu_info["per_core_utilization"]
+    )
+
+    print(
+        f"Per-Core Utilization:  "
+        f"[{per_core}]"
+    )
+
+    load = cpu_info["load_average"]
+
+    print(
+        f"Load Average:          "
+        f"1m: {load['1min']:.2f}, "
+        f"5m: {load['5min']:.2f}, "
+        f"15m: {load['15min']:.2f}"
+    )
 
     # =========================
-    # Memory Hardware
+    # Memory
     # =========================
 
     memory_info = collect_memory_info()
@@ -59,18 +137,42 @@ def main():
     ram = memory_info["ram"]
     swap = memory_info["swap"]
 
-    print(f"Total:        {ram['total_bytes'] / (1024 ** 3):.2f} GB")
-    print(f"Used:         {ram['used_bytes'] / (1024 ** 3):.2f} GB")
-    print(f"Available:    {ram['available_bytes'] / (1024 ** 3):.2f} GB")
-    print(f"Utilization:  {ram['utilization_percent']:.1f}%")
+    print(
+        f"Total:        "
+        f"{format_gb(ram['total_bytes']):.2f} GB"
+    )
+    print(
+        f"Used:         "
+        f"{format_gb(ram['used_bytes']):.2f} GB"
+    )
+    print(
+        f"Available:    "
+        f"{format_gb(ram['available_bytes']):.2f} GB"
+    )
+    print(
+        f"Utilization:  "
+        f"{ram['utilization_percent']:.1f}%"
+    )
 
     if swap["total_bytes"] == 0:
         print("Swap:         None")
     else:
-        print(f"Swap Total:       {swap['total_bytes'] / (1024 ** 3):.2f} GB")
-        print(f"Swap Used:        {swap['used_bytes'] / (1024 ** 3):.2f} GB")
-        print(f"Swap Available:   {swap['free_bytes'] / (1024 ** 3):.2f} GB")
-        print(f"Swap Utilization: {swap['utilization_percent']:.1f}%")
+        print(
+            f"Swap Total:       "
+            f"{format_gb(swap['total_bytes']):.2f} GB"
+        )
+        print(
+            f"Swap Used:        "
+            f"{format_gb(swap['used_bytes']):.2f} GB"
+        )
+        print(
+            f"Swap Available:   "
+            f"{format_gb(swap['free_bytes']):.2f} GB"
+        )
+        print(
+            f"Swap Utilization: "
+            f"{swap['utilization_percent']:.1f}%"
+        )
 
     # =========================
     # Disk
@@ -107,9 +209,15 @@ def main():
             print(f"     Type:        {partition['type']}")
 
             if partition["filesystem"]:
-                print(f"     Filesystem:  {partition['filesystem']}")
+                print(
+                    f"     Filesystem:  "
+                    f"{partition['filesystem']}"
+                )
 
-            print(f"     Mountpoints: {partition['mountpoints']}")
+            print(
+                f"     Mountpoints: "
+                f"{partition['mountpoints']}"
+            )
 
             if partition.get("usage"):
                 print_usage(
@@ -119,20 +227,85 @@ def main():
 
             for lv in partition["logical_volumes"]:
 
-                print(f"\n     Logical Volume: {lv['name']}")
+                print(
+                    f"\n     Logical Volume: "
+                    f"{lv['name']}"
+                )
                 print(f"       Size:        {lv['size']}")
                 print(f"       Type:        {lv['type']}")
 
                 if lv["filesystem"]:
-                    print(f"       Filesystem:  {lv['filesystem']}")
+                    print(
+                        f"       Filesystem:  "
+                        f"{lv['filesystem']}"
+                    )
 
-                print(f"       Mountpoints: {lv['mountpoints']}")
+                print(
+                    f"       Mountpoints: "
+                    f"{lv['mountpoints']}"
+                )
 
                 if lv.get("usage"):
                     print_usage(
                         lv["usage"],
                         indent="       ",
                     )
+
+    # =========================
+    # Network
+    # =========================
+
+    network_info = collect_network_info()
+
+    print("\n=== Network Information ===")
+
+    if not network_info:
+        print("Network information unavailable.")
+        return
+
+    for interface in network_info["interfaces"]:
+
+        print(f"\nInterface: {interface['name']}")
+        print(
+            f"  Status:       "
+            f"{'UP' if interface['is_up'] else 'DOWN'}"
+        )
+        print(
+            f"  Speed:        "
+            f"{interface['speed_mbps']} Mbps"
+        )
+        print(
+            f"  MTU:          "
+            f"{interface['mtu']}"
+        )
+
+        addresses = interface["addresses"]
+
+        print(
+            f"  MAC:          "
+            f"{addresses['mac'] or 'Unknown'}"
+        )
+
+        if addresses["ipv4"]:
+            print(
+                f"  IPv4:         "
+                f"{', '.join(addresses['ipv4'])}"
+            )
+
+        if addresses["ipv6"]:
+            print(
+                f"  IPv6:         "
+                f"{', '.join(addresses['ipv6'])}"
+            )
+
+        usage = interface["usage"]
+
+        print(
+            f"  Usage:        "
+            f"Total: {format_bytes(usage['total_bytes'])} "
+            f"(RX: {format_bytes(usage['rx_bytes'])}, "
+            f"TX: {format_bytes(usage['tx_bytes'])})"
+        )
 
 
 if __name__ == "__main__":
