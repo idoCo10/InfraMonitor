@@ -304,7 +304,7 @@ def main():
             label = "Mountpoint:" if len(disk_mountpoints) == 1 else "Mountpoints:"
 
             print(
-                f"  {label:<12}"
+                f"  {label:<13}"
                 f"{format_mountpoints(disk_mountpoints)}"
             )
 
