@@ -48,16 +48,21 @@ def print_usage(usage, indent="       "):
 
 
 def format_mountpoints(mountpoints):
-    valid_mounts = [
-        mount
-        for mount in mountpoints
-        if mount
+    valid_mountpoints = [
+        mountpoint
+        for mountpoint in mountpoints
+        if mountpoint
     ]
 
-    if not valid_mounts:
+    if not valid_mountpoints:
         return "None"
 
-    return ", ".join(valid_mounts)
+    cleaned_mountpoints = [
+        "SWAP" if mountpoint == "[SWAP]" else mountpoint
+        for mountpoint in valid_mountpoints
+    ]
+
+    return ", ".join(cleaned_mountpoints)
 
 
 
@@ -296,8 +301,10 @@ def main():
         ]
 
         if disk_mountpoints:
+            label = "Mountpoint:" if len(disk_mountpoints) == 1 else "Mountpoints:"
+
             print(
-                f"  Mountpoints: "
+                f"  {label:<12}"
                 f"{format_mountpoints(disk_mountpoints)}"
             )
 
