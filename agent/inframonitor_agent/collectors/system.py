@@ -11,7 +11,24 @@ def get_uptime():
     return str(timedelta(seconds=int(uptime_seconds)))
 
 
+def get_os_name():
+    """Return the human-readable OS name and version."""
+    try:
+        os_release = {}
+
+        for line in Path("/etc/os-release").read_text().splitlines():
+            if "=" in line:
+                key, value = line.split("=", 1)
+                os_release[key] = value.strip('"')
+
+        return os_release.get("PRETTY_NAME", platform.system())
+
+    except (FileNotFoundError, PermissionError):
+        return platform.system()
+
+
 def get_virtualization():
+    """Detect virtualization platform and VMware Tools version."""
     try:
         product_name = (
             Path("/sys/class/dmi/id/product_name")
@@ -30,13 +47,10 @@ def get_virtualization():
     }
 
     virtualization = None
-    is_virtual_machine = False
-    vmware_tools_version = None
 
     for platform_product, platform_name in virtual_platforms.items():
         if platform_product.lower() in product_name.lower():
             virtualization = platform_name
-            is_virtual_machine = True
             break
 
     if virtualization == "VMware":
@@ -55,8 +69,14 @@ def get_virtualization():
                     check=True,
                 )
 
-                vmware_tools_version = result.stdout.strip()
-                break
+                tools_version = result.stdout.strip()
+
+                if tools_version:
+                    virtualization = (
+                        f"VMware (Tools version: "
+                        f"{tools_version.replace('(build-', '[build-').replace(')', ']')})"
+                    )
+                    break
 
             except (
                 subprocess.CalledProcessError,
@@ -65,22 +85,16 @@ def get_virtualization():
             ):
                 pass
 
-    return {
-        "is_virtual_machine": is_virtual_machine,
-        "virtualization": virtualization,
-        "vmware_tools_version": vmware_tools_version,
-    }
+    return virtualization or "None"
+
 
 def collect_system_info():
     """Collect general system information."""
-    virtualization = get_virtualization()
-
     return {
         "hostname": socket.gethostname(),
-        "os": platform.system(),
-        "os_version": platform.version(),
+        "os": get_os_name(),
         "kernel": platform.release(),
         "architecture": platform.machine(),
         "uptime": get_uptime(),
-        **virtualization,
+        "virtualization": get_virtualization(),
     }

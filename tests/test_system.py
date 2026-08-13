@@ -6,8 +6,11 @@ def test_system_info():
 
     assert info["hostname"]
     assert info["os"]
-    assert info["os_version"]
     assert info["kernel"]
     assert info["architecture"]
     assert info["uptime"]
-    assert isinstance(info["is_virtual_machine"], bool)
+
+    assert "virtualization" in info
+    assert info["virtualization"] is None or isinstance(
+        info["virtualization"], str
+    )

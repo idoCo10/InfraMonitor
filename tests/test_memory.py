@@ -13,16 +13,23 @@ def test_memory_info():
     ram = memory["ram"]
     swap = memory["swap"]
 
+    # RAM
     assert ram["total_bytes"] > 0
     assert ram["used_bytes"] >= 0
     assert ram["available_bytes"] >= 0
     assert ram["free_bytes"] >= 0
     assert 0 <= ram["utilization_percent"] <= 100
 
+    # Swap
     assert swap["total_bytes"] >= 0
     assert swap["used_bytes"] >= 0
     assert swap["free_bytes"] >= 0
     assert 0 <= swap["utilization_percent"] <= 100
+
+    # If swap is configured, used/free must be valid.
+    if swap["total_bytes"] > 0:
+        assert swap["used_bytes"] <= swap["total_bytes"]
+        assert swap["free_bytes"] <= swap["total_bytes"]
 
 
 def test_memory_hardware():
