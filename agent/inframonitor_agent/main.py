@@ -158,39 +158,39 @@ def main():
     swap = memory_info["swap"]
 
     print(
-        f"Total:        "
+        f"{'Total:':<18}"
         f"{format_gb(ram['total_bytes']):.2f} GB"
     )
     print(
-        f"Used:         "
+        f"{'Used:':<18}"
         f"{format_gb(ram['used_bytes']):.2f} GB"
     )
     print(
-        f"Available:    "
+        f"{'Available:':<18}"
         f"{format_gb(ram['available_bytes']):.2f} GB"
     )
     print(
-        f"Utilization:  "
+        f"{'Utilization:':<18}"
         f"{ram['utilization_percent']:.1f}%"
     )
 
     if swap["total_bytes"] == 0:
-        print("Swap:         None")
+        print(f"{'Swap:':<18}None")
     else:
         print(
-            f"Swap Total:       "
+            f"{'Swap Total:':<18}"
             f"{format_gb(swap['total_bytes']):.2f} GB"
         )
         print(
-            f"Swap Used:        "
+            f"{'Swap Used:':<18}"
             f"{format_gb(swap['used_bytes']):.2f} GB"
         )
         print(
-            f"Swap Available:   "
+            f"{'Swap Available:':<18}"
             f"{format_gb(swap['free_bytes']):.2f} GB"
         )
         print(
-            f"Swap Utilization: "
+            f"{'Swap Utilization:':<18}"
             f"{swap['utilization_percent']:.1f}%"
         )
 
