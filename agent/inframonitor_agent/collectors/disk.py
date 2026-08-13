@@ -145,8 +145,20 @@ def get_disk_hardware():
             "vendor": vendor or None,
             "model": model or None,
             "serial": serial or None,
+            "filesystem": disk.get("fstype"),
+            "mountpoints": disk.get("mountpoints") or [None],
+            "usage": None,
             "partitions": [],
         }
+
+        for mountpoint in disk_info["mountpoints"]:
+            if mountpoint:
+                usage = get_disk_usage(mountpoint)
+
+                if usage:
+                    disk_info["usage"] = usage
+                    break
+
 
         children = disk.get("children") or []
 
