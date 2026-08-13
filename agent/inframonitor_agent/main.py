@@ -276,6 +276,22 @@ def main():
         print(f"  Vendor:      {disk['vendor'] or 'Unknown'}")
         print(f"  Model:       {disk['model'] or 'Unknown'}")
         print(f"  Serial:      {disk['serial'] or 'Unknown'}")
+
+        if disk.get("filesystem"):
+            print(f"  Filesystem:  {disk['filesystem']}")
+
+        if disk.get("mountpoints"):
+            print(
+                f"  Mountpoints: "
+                f"{format_mountpoints(disk['mountpoints'])}"
+            )
+
+        if disk.get("usage"):
+            print_usage(
+                disk["usage"],
+                indent="  ",
+            )
+
         print(f"  Partitions:  {len(disk['partitions'])}")
 
         for index, partition in enumerate(
