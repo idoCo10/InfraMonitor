@@ -114,6 +114,7 @@ Architecture:             x86_64
 Uptime:                   9:58:59
 Virtualization:           VMware (Tools version: 13.0.0.0 [build-24696409])
 
+
 === CPU Information ===
 Model:                 Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
 vCPUs:                 4
@@ -126,12 +127,14 @@ Per-Core Utilization:
   Core 3: 3.0%
 Load Average:          1m: 0.02, 5m: 0.01, 15m: 0.00
 
+
 === Memory Information ===
 Total:            7.71 GB
 Used:             1.11 GB
 Available:        6.60 GB
 Utilization:      14.4%
 Swap:             None
+
 
 === Disk Information ===
 Total Disks: 1
@@ -175,6 +178,7 @@ Disk: sda
        Used:        5.37 GB
        Free:        7.59 GB
        Utilization: 41.4%
+
 
 === Network Information ===
 
