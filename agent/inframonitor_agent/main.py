@@ -204,7 +204,7 @@ def main():
     print("\n=== Memory Hardware ===")
 
     if not memory_hardware:
-        print("Memory hardware information unavailable. Need root permissions.")
+        print("Unavailable (requires elevated privileges)")
     else:
         print(
             f"Installed Modules: "
