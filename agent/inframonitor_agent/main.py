@@ -47,6 +47,21 @@ def print_usage(usage, indent="       "):
     )
 
 
+def format_mountpoints(mountpoints):
+    valid_mounts = [
+        mount
+        for mount in mountpoints
+        if mount
+    ]
+
+    if not valid_mounts:
+        return "None"
+
+    return ", ".join(valid_mounts)
+
+
+
+
 def main():
 
     # =========================
@@ -112,10 +127,15 @@ def main():
         for value in cpu_info["per_core_utilization"]
     )
 
-    print(
-        f"Per-Core Utilization:  "
-        f"[{per_core}]"
-    )
+    print("Per-Core Utilization:")
+
+    for core_index, utilization in enumerate(
+        cpu_info["per_core_utilization"]
+    ):
+        print(
+            f"  Core {core_index}: "
+            f"{utilization:.1f}%"
+        )
 
     load = cpu_info["load_average"]
 
@@ -216,7 +236,7 @@ def main():
 
             print(
                 f"     Mountpoints: "
-                f"{partition['mountpoints']}"
+                f"{format_mountpoints(partition['mountpoints'])}"
             )
 
             if partition.get("usage"):
@@ -242,7 +262,7 @@ def main():
 
                 print(
                     f"       Mountpoints: "
-                    f"{lv['mountpoints']}"
+                    f"{format_mountpoints(lv['mountpoints'])}"
                 )
 
                 if lv.get("usage"):
