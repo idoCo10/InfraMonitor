@@ -28,31 +28,80 @@ def get_os_name():
 
 
 def get_virtualization():
-    """Detect virtualization platform and VMware Tools version."""
-    try:
-        product_name = (
-            Path("/sys/class/dmi/id/product_name")
-            .read_text()
-            .strip()
-        )
-    except (FileNotFoundError, PermissionError):
-        product_name = "Unknown"
-
-    virtual_platforms = {
-        "VMware Virtual Platform": "VMware",
-        "VirtualBox": "VirtualBox",
-        "KVM": "KVM",
-        "QEMU": "QEMU",
-        "Microsoft Corporation": "Hyper-V",
-    }
-
     virtualization = None
+    vmware_tools_version = None
 
-    for platform_product, platform_name in virtual_platforms.items():
-        if platform_product.lower() in product_name.lower():
-            virtualization = platform_name
-            break
+    # Primary detection method
+    try:
+        result = subprocess.run(
+            ["systemd-detect-virt"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+            check=False,
+        )
 
+        detected = result.stdout.strip().lower()
+
+        virtualization_names = {
+            "kvm": "KVM",
+            "qemu": "QEMU",
+            "vmware": "VMware",
+            "oracle": "VirtualBox",
+            "microsoft": "Hyper-V",
+            "xen": "Xen",
+            "amazon": "Amazon EC2",
+            "google": "Google Compute Engine",
+        }
+
+        if result.returncode == 0 and detected != "none":
+            virtualization = virtualization_names.get(
+                detected,
+                detected.upper(),
+            )
+
+    except (
+        FileNotFoundError,
+        subprocess.TimeoutExpired,
+    ):
+        pass
+
+    # Fallback to DMI if systemd-detect-virt
+    # is unavailable or detects nothing.
+    if virtualization is None:
+        try:
+            product_name = (
+                Path("/sys/class/dmi/id/product_name")
+                .read_text()
+                .strip()
+            )
+
+            sys_vendor = (
+                Path("/sys/class/dmi/id/sys_vendor")
+                .read_text()
+                .strip()
+            )
+
+            dmi_info = f"{sys_vendor} {product_name}".lower()
+
+            virtual_platforms = {
+                "vmware": "VMware",
+                "virtualbox": "VirtualBox",
+                "qemu": "QEMU",
+                "kvm": "KVM",
+                "microsoft": "Hyper-V",
+                "linode": "KVM",
+            }
+
+            for identifier, platform_name in virtual_platforms.items():
+                if identifier in dmi_info:
+                    virtualization = platform_name
+                    break
+
+        except (FileNotFoundError, PermissionError, OSError):
+            pass
+
+    # VMware Tools version
     if virtualization == "VMware":
         commands = [
             ["vmware-toolbox-cmd", "-v"],
@@ -69,14 +118,8 @@ def get_virtualization():
                     check=True,
                 )
 
-                tools_version = result.stdout.strip()
-
-                if tools_version:
-                    virtualization = (
-                        f"VMware (Tools version: "
-                        f"{tools_version.replace('(build-', '[build-').replace(')', ']')})"
-                    )
-                    break
+                vmware_tools_version = result.stdout.strip()
+                break
 
             except (
                 subprocess.CalledProcessError,
@@ -85,8 +128,26 @@ def get_virtualization():
             ):
                 pass
 
-    return virtualization or "None"
+    if virtualization == "VMware" and vmware_tools_version:
+        version = vmware_tools_version.replace(
+            " (build-",
+            " [build-",
+        ).replace(
+            ")",
+            "]",
+        )
 
+        virtualization_display = (
+            f"VMware (Tools version: {version})"
+        )
+
+    else:
+        virtualization_display = virtualization or "None"
+
+    return virtualization_display
+
+
+    
 
 def collect_system_info():
     """Collect general system information."""
