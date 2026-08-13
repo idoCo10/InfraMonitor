@@ -348,10 +348,12 @@ def main():
             f"  Status:       "
             f"{'UP' if interface['is_up'] else 'DOWN'}"
         )
-        print(
-            f"  Speed:        "
-            f"{interface['speed_mbps']} Mbps"
-        )
+        speed = interface["speed_mbps"]
+
+        if speed and speed > 0:
+            print(f"  Speed:        {speed} Mbps")
+        else:
+            print("  Speed:        N/A")
         print(
             f"  MTU:          "
             f"{interface['mtu']}"
