@@ -1,3 +1,6 @@
+import argparse
+import json
+
 from inframonitor_agent.collectors.system import collect_system_info
 from inframonitor_agent.collectors.cpu import collect_cpu_info
 from inframonitor_agent.collectors.memory import (
@@ -6,6 +9,8 @@ from inframonitor_agent.collectors.memory import (
 )
 from inframonitor_agent.collectors.disk import collect_disk_info
 from inframonitor_agent.collectors.network import collect_network_info
+
+
 
 
 def format_gb(bytes_value):
@@ -65,9 +70,46 @@ def format_mountpoints(mountpoints):
     return ", ".join(cleaned_mountpoints)
 
 
+def collect_all_info():
+    system_info = collect_system_info()
+
+    data = {
+        "system": system_info,
+        "cpu": collect_cpu_info(),
+        "memory": collect_memory_info(),
+        "disk": collect_disk_info(),
+        "network": collect_network_info(),
+    }
+
+    if system_info["virtualization"] == "None":
+        memory_hardware = get_memory_hardware()
+
+        if memory_hardware:
+            data["memory_hardware"] = memory_hardware
+
+    return data
+
+
 
 
 def main():
+
+    parser = argparse.ArgumentParser(
+        description="InfraMonitor system information collector"
+    )
+
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Output system information as JSON",
+    )
+
+    args = parser.parse_args()
+
+    if args.json:
+        data = collect_all_info()
+        print(json.dumps(data, indent=2))
+        return
 
     # =========================
     # System
