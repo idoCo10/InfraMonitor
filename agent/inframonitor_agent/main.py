@@ -271,11 +271,20 @@ def main():
         print(f"\nDisk: {disk['name']}")
         print(f"  Size:        {disk['size']}")
         print(f"  Type:        {disk['type']}")
-        print(f"  Bus:         {disk['bus'] or 'Unknown'}")
-        print(f"  Media Type:  {disk['media_type']}")
-        print(f"  Vendor:      {disk['vendor'] or 'Unknown'}")
-        print(f"  Model:       {disk['model'] or 'Unknown'}")
-        print(f"  Serial:      {disk['serial'] or 'Unknown'}")
+        if disk.get("bus"):
+            print(f"  Bus:         {disk['bus']}")
+
+        if disk.get("media_type") and disk["media_type"] != "Unknown":
+            print(f"  Media Type:  {disk['media_type']}")
+
+        if disk.get("vendor"):
+            print(f"  Vendor:      {disk['vendor']}")
+
+        if disk.get("model"):
+            print(f"  Model:       {disk['model']}")
+
+        if disk.get("serial"):
+            print(f"  Serial:      {disk['serial']}")
 
         if disk.get("filesystem"):
             print(f"  Filesystem:  {disk['filesystem']}")
