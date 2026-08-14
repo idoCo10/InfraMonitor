@@ -12,7 +12,6 @@ from inframonitor_agent.collectors.network import collect_network_info
 
 
 
-
 def format_gb(bytes_value):
     return bytes_value / (1024 ** 3)
 
