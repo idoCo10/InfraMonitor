@@ -1,6 +1,7 @@
-import psutil
-import subprocess
 import re
+import subprocess
+
+import psutil
 
 
 def collect_memory_info():
@@ -31,6 +32,7 @@ def get_memory_hardware():
             capture_output=True,
             text=True,
             timeout=5,
+            check=False,
         )
 
         if result.returncode != 0:
@@ -62,8 +64,8 @@ def get_memory_hardware():
         if size.lower() == "no module installed":
             continue
 
-        def get_value(field):
-            match = re.search(rf"{field}:\s+(.+)", device)
+        def get_value(field, device_text=device):
+            match = re.search(rf"{field}:\s+(.+)", device_text)
             return match.group(1).strip() if match else None
 
         modules.append({

@@ -96,8 +96,10 @@ def get_disk_hardware():
                 "lsblk",
                 "-J",
                 "-o",
-                "NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,"
-                "MODEL,VENDOR,SERIAL",
+                (
+                    "NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,"
+                    "MODEL,VENDOR,SERIAL"
+                ),
             ],
             capture_output=True,
             text=True,

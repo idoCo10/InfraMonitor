@@ -16,6 +16,7 @@ agent/inframonitor_agent/collectors/network.py
 agent/inframonitor_agent/collectors/system.py
 tests/test_cpu.py
 tests/test_disk.py
+tests/test_main.py
 tests/test_memory.py
 tests/test_network.py
 tests/test_system.py

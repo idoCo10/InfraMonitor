@@ -2,3 +2,4 @@ psutil
 
 [dev]
 pytest
+ruff

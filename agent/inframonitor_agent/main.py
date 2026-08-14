@@ -1,14 +1,14 @@
 import argparse
 import json
 
-from inframonitor_agent.collectors.system import collect_system_info
 from inframonitor_agent.collectors.cpu import collect_cpu_info
+from inframonitor_agent.collectors.disk import collect_disk_info
 from inframonitor_agent.collectors.memory import (
     collect_memory_info,
     get_memory_hardware,
 )
-from inframonitor_agent.collectors.disk import collect_disk_info
 from inframonitor_agent.collectors.network import collect_network_info
+from inframonitor_agent.collectors.system import collect_system_info
 
 
 def format_gb(bytes_value):
@@ -165,11 +165,6 @@ def main():
     print(
         f"CPU Utilization:       "
         f"{cpu_info['utilization_percent']:.1f}%"
-    )
-
-    per_core = ", ".join(
-        f"{value:.1f}%"
-        for value in cpu_info["per_core_utilization"]
     )
 
     print("Per-Core Utilization:")

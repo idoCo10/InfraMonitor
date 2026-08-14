@@ -1,8 +1,8 @@
 import platform
 import socket
 import subprocess
-from pathlib import Path
 from datetime import timedelta
+from pathlib import Path
 
 
 def get_uptime():
