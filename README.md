@@ -1,8 +1,10 @@
 # InfraMonitor
 
-InfraMonitor is a Linux infrastructure monitoring and inventory project built with Python.
+InfraMonitor is a Linux infrastructure monitoring and inventory agent built with Python.
 
-The agent collects system, CPU, memory, storage, virtualization, and network information from Linux hosts. The project is being developed as an end-to-end DevOps platform, with planned containerization, CI/CD, centralized monitoring, infrastructure as code, and Kubernetes deployment.
+The agent collects system, CPU, memory, storage, virtualization, and network information from Linux hosts and exposes the collected data through both human-readable CLI output and structured JSON.
+
+The project is being developed as an end-to-end DevOps platform, with automated testing and CI already implemented and containerization, centralized monitoring, infrastructure as code, and Kubernetes deployment planned.
 
 ## Current Features
 
@@ -19,7 +21,7 @@ The agent collects system, CPU, memory, storage, virtualization, and network inf
 ### CPU
 
 - CPU model
-- Physical/logical CPU information
+- Physical and logical CPU information
 - VM-aware vCPU reporting
 - CPU frequency
 - Overall CPU utilization
@@ -31,9 +33,9 @@ The agent collects system, CPU, memory, storage, virtualization, and network inf
 - Total, used, and available memory
 - Memory utilization
 - Swap detection and utilization
-- Memory hardware information when available
+- Physical memory hardware information when available
 
-Some hardware information requires elevated privileges and may not be exposed by virtualized environments.
+Some physical memory hardware information requires elevated privileges and may not be exposed by virtualized environments.
 
 ### Storage
 
@@ -50,12 +52,18 @@ Some hardware information requires elevated privileges and may not be exposed by
 
 - Network interface discovery
 - Interface state
-- Link speed
+- Link speed when available
 - MTU
 - MAC address
 - IPv4 and IPv6 addresses
 - RX/TX traffic statistics
 - Automatic traffic unit formatting
+
+### CLI
+
+- Human-readable system report
+- Structured JSON output
+- Standard command-line help
 
 ## Requirements
 
@@ -87,7 +95,7 @@ Activate it:
 source .venv/bin/activate
 ```
 
-Install InfraMonitor in editable mode:
+Install InfraMonitor:
 
 ```bash
 python -m pip install -e .
@@ -97,13 +105,25 @@ InfraMonitor is now available as a CLI command inside the virtual environment.
 
 ## Usage
 
-Run:
+Display the system report:
 
 ```bash
 inframonitor
 ```
 
-Example:
+Display structured JSON:
+
+```bash
+inframonitor --json
+```
+
+Display CLI help:
+
+```bash
+inframonitor --help
+```
+
+Example output:
 
 ```text
 === System Information ===
@@ -113,7 +133,6 @@ Kernel:                   6.8.0-137-generic
 Architecture:             x86_64
 Uptime:                   9:58:59
 Virtualization:           VMware (Tools version: 13.0.0.0 [build-24696409])
-
 
 === CPU Information ===
 Model:                 Intel(R) Core(TM) i7-10750H CPU @ 2.60GHz
@@ -127,14 +146,12 @@ Per-Core Utilization:
   Core 3: 3.0%
 Load Average:          1m: 0.02, 5m: 0.01, 15m: 0.00
 
-
 === Memory Information ===
 Total:            7.71 GB
 Used:             1.11 GB
 Available:        6.60 GB
 Utilization:      14.4%
 Swap:             None
-
 
 === Disk Information ===
 Total Disks: 1
@@ -148,38 +165,6 @@ Disk: sda
   Model:       VMware Virtual S
   Partitions:  3
 
-  1. sda1
-     Size:        1M
-     Type:        part
-     Mountpoints: None
-
-  2. sda2
-     Size:        2G
-     Type:        part
-     Filesystem:  ext4
-     Mountpoints: /boot
-     Total:       1.90 GB
-     Used:        0.20 GB
-     Free:        1.59 GB
-     Utilization: 10.9%
-
-  3. sda3
-     Size:        28G
-     Type:        part
-     Filesystem:  LVM2_member
-     Mountpoints: None
-
-     Logical Volume: ubuntu--vg-ubuntu--lv
-       Size:        14G
-       Type:        lvm
-       Filesystem:  ext4
-       Mountpoints: /
-       Total:       13.67 GB
-       Used:        5.37 GB
-       Free:        7.59 GB
-       Utilization: 41.4%
-
-
 === Network Information ===
 
 Interface: ens33
@@ -192,9 +177,9 @@ Interface: ens33
   Usage:        Total: 504.5 MB (RX: 483.2 MB, TX: 21.2 MB)
 ```
 
-## Development Setup
+## Development
 
-Install the project with development dependencies:
+Install InfraMonitor with development dependencies:
 
 ```bash
 python -m pip install -e ".[dev]"
@@ -206,18 +191,49 @@ Run the test suite:
 python -m pytest
 ```
 
-The project currently includes tests for:
+Run static analysis and linting:
+
+```bash
+ruff check .
+```
+
+The current test suite covers:
 
 - System collection
 - CPU collection
 - Memory collection
 - Disk collection
 - Network collection
+- Main data collection and CLI functionality
+
+## Continuous Integration
+
+GitHub Actions automatically validates the project on:
+
+- Pull requests targeting `main`
+- Pushes to `main`
+
+The CI pipeline:
+
+1. Checks out the repository
+2. Sets up Python 3.12
+3. Installs InfraMonitor with development dependencies
+4. Runs Ruff
+5. Runs the pytest test suite
+
+Workflow configuration:
+
+```text
+.github/workflows/ci.yml
+```
 
 ## Project Structure
 
 ```text
 InfraMonitor/
+├── .github/
+│   └── workflows/
+│       └── ci.yml
 ├── agent/
 │   └── inframonitor_agent/
 │       ├── collectors/
@@ -226,8 +242,15 @@ InfraMonitor/
 │       │   ├── memory.py
 │       │   ├── network.py
 │       │   └── system.py
+│       ├── __init__.py
 │       └── main.py
 ├── tests/
+│   ├── test_cpu.py
+│   ├── test_disk.py
+│   ├── test_main.py
+│   ├── test_memory.py
+│   ├── test_network.py
+│   └── test_system.py
 ├── pyproject.toml
 └── README.md
 ```
@@ -236,12 +259,31 @@ InfraMonitor/
 
 The current implementation consists of a standalone Linux agent.
 
-The planned architecture is:
+```text
+Linux Host
+    │
+    ▼
+InfraMonitor Agent
+    │
+    ├── System Collector
+    ├── CPU Collector
+    ├── Memory Collector
+    ├── Disk Collector
+    └── Network Collector
+            │
+            ▼
+      Structured Data
+        │         │
+        ▼         ▼
+    CLI Output   JSON
+```
+
+The planned centralized architecture is:
 
 ```text
 Linux Hosts
     │
-    │ InfraMonitor Agent
+    │ InfraMonitor Agents
     ▼
 Backend API
     │
@@ -253,7 +295,7 @@ PostgreSQL
     └── Web Dashboard
 ```
 
-The agent is being developed first so that infrastructure collection remains independent from the backend and deployment platform.
+The agent is being developed independently from the backend so that host data collection remains separate from storage, visualization, and deployment components.
 
 ## Roadmap
 
@@ -270,7 +312,7 @@ The agent is being developed first so that infrastructure collection remains ind
 - [x] Network traffic statistics
 - [x] Automated tests
 - [x] Installable CLI
-- [ ] Structured JSON output
+- [x] Structured JSON output
 
 ### Phase 2 — Application & Containers
 
@@ -282,7 +324,9 @@ The agent is being developed first so that infrastructure collection remains ind
 
 ### Phase 3 — CI/CD
 
-- [ ] GitHub Actions test pipeline
+- [x] GitHub Actions CI pipeline
+- [x] Automated linting
+- [x] Automated test execution
 - [ ] Automated Docker builds
 - [ ] Container registry
 - [ ] Automated deployment workflow
@@ -316,16 +360,18 @@ The agent is being developed first so that infrastructure collection remains ind
 
 - Python
 - psutil
-- Linux
 - pytest
+- Ruff
 - Git
+- GitHub Actions
+- Linux system utilities
 
 **Planned**
 
 - FastAPI
 - PostgreSQL
-- Docker / Docker Compose
-- GitHub Actions
+- Docker
+- Docker Compose
 - Terraform
 - AWS
 - Kubernetes
