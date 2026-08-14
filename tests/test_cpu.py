@@ -1,4 +1,4 @@
-from inframonitor_agent.collectors.cpu import (
+#from inframonitor_agent.collectors.cpu import (
     collect_cpu_info,
 )
 
