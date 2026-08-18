@@ -13,6 +13,24 @@ jobs:
   test:
     runs-on: ubuntu-latest
 
+    services:
+      postgres:
+        image: postgres:16
+
+        env:
+          POSTGRES_DB: inframonitor_test
+          POSTGRES_USER: inframonitor
+          POSTGRES_PASSWORD: inframonitor
+
+        ports:
+          - 5432:5432
+
+        options: >-
+          --health-cmd "pg_isready -U inframonitor -d inframonitor_test"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -27,11 +45,18 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e ".[backend,dev]"
 
+      - name: Run database migrations
+        env:
+          DATABASE_URL: postgresql+psycopg://inframonitor:inframonitor@127.0.0.1:5432/inframonitor_test
+        run: alembic upgrade head
+
       - name: Run Ruff
         run: ruff check .
-        
+
       - name: Run tests
+        env:
+          DATABASE_URL: postgresql+psycopg://inframonitor:inframonitor@127.0.0.1:5432/inframonitor_test
         run: python -m pytest
 
       - name: Build Docker image
-        run: docker build -t inframonitor:ci .        
+        run: docker build -t inframonitor:ci .
