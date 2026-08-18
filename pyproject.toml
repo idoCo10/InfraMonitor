@@ -16,6 +16,9 @@ inframonitor = "inframonitor_agent.main:main"
 backend = [
     "fastapi",
     "uvicorn",
+    "sqlalchemy",
+    "psycopg[binary]",   
+    "alembic",     
 ]
 
 dev = [

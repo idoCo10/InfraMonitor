@@ -10,3 +10,23 @@ services:
     volumes:
       - /:/host:ro,rslave
       - /proc:/host/proc:ro
+
+  postgres:
+    image: postgres:16
+    container_name: inframonitor-postgres
+    restart: unless-stopped
+
+    environment:
+      POSTGRES_DB: inframonitor
+      POSTGRES_USER: inframonitor
+      POSTGRES_PASSWORD: inframonitor
+
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+    ports:
+      - "5432:5432"
+
+
+volumes:
+  postgres_data:

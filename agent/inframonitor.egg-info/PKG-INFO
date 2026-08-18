@@ -7,6 +7,9 @@ Requires-Dist: psutil
 Provides-Extra: backend
 Requires-Dist: fastapi; extra == "backend"
 Requires-Dist: uvicorn; extra == "backend"
+Requires-Dist: sqlalchemy; extra == "backend"
+Requires-Dist: psycopg[binary]; extra == "backend"
+Requires-Dist: alembic; extra == "backend"
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"

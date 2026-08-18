@@ -8,7 +8,10 @@ def test_health():
     response = client.get("/health")
 
     assert response.status_code == 200
-    assert response.json() == {"status": "ok"}
+    assert response.json() == {
+        "status": "ok",
+        "database": "connected",
+    }
 
 
 def test_receive_report():
@@ -28,7 +31,9 @@ def test_receive_report():
     )
 
     assert response.status_code == 200
-    assert response.json() == {
-        "status": "received",
-        "hostname": "test-server",
-    }
+    data = response.json()
+
+    assert data["status"] == "received"
+    assert data["hostname"] == "test-server"
+    assert isinstance(data["host_id"], int)
+    assert isinstance(data["report_id"], int)
