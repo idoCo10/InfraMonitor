@@ -4,10 +4,69 @@ import subprocess
 
 import psutil
 
+from inframonitor_agent.host import host_path, is_host_mode
+
+
+def get_host_mounts():
+    """
+    Return host filesystem information by block device.
+
+    Example:
+        /dev/sda2 -> {
+            "mountpoints": ["/boot"],
+            "filesystem": "ext4",
+        }
+    """
+
+    mounts = {}
+
+    mountinfo_path = host_path("/proc/1/mountinfo")
+
+    try:
+        lines = mountinfo_path.read_text().splitlines()
+
+    except (FileNotFoundError, PermissionError, OSError):
+        return mounts
+
+    for line in lines:
+        parts = line.split()
+
+        if "-" not in parts:
+            continue
+
+        separator_index = parts.index("-")
+
+        if separator_index + 2 >= len(parts):
+            continue
+
+        mountpoint = parts[4]
+        filesystem = parts[separator_index + 1]
+        device = parts[separator_index + 2]
+
+        if not device.startswith("/dev/"):
+            continue
+
+        mounts.setdefault(
+            device,
+            {
+                "mountpoints": [],
+                "filesystem": filesystem,
+            },
+        )
+
+        mounts[device]["mountpoints"].append(mountpoint)
+
+    return mounts
 
 def get_disk_usage(mountpoint):
     try:
-        usage = psutil.disk_usage(mountpoint)
+        usage_path = (
+            host_path(mountpoint)
+            if is_host_mode()
+            else mountpoint
+        )
+
+        usage = psutil.disk_usage(usage_path)
 
         return {
             "total_bytes": usage.total,
@@ -91,16 +150,30 @@ def get_media_type(device_name, vendor=None, model=None):
 
 def get_disk_hardware():
     try:
-        result = subprocess.run(
+        lsblk_command = [
+            "lsblk",
+            "-J",
+        ]
+
+        if is_host_mode():
+            lsblk_command.extend(
+                [
+                    "--sysroot",
+                    str(host_path("/")),
+                ]
+            )
+
+        lsblk_command.extend(
             [
-                "lsblk",
-                "-J",
                 "-o",
                 (
                     "NAME,SIZE,TYPE,FSTYPE,MOUNTPOINTS,"
                     "MODEL,VENDOR,SERIAL"
                 ),
-            ],
+            ]
+        )        
+        result = subprocess.run(
+            lsblk_command,
             capture_output=True,
             text=True,
             timeout=5,
@@ -120,6 +193,7 @@ def get_disk_hardware():
         return None
 
     disks = []
+    host_mounts = get_host_mounts()
 
     for disk in data.get("blockdevices", []):
         if disk.get("type") != "disk":
@@ -174,9 +248,21 @@ def get_disk_hardware():
                 "name": partition_name,
                 "size": partition.get("size"),
                 "type": partition.get("type"),
-                "filesystem": partition.get("fstype"),
-                "mountpoints": partition.get("mountpoints")
-                or [None],
+                "filesystem": (
+                    host_mounts.get(
+                        f"/dev/{partition_name}",
+                        {},
+                    ).get("filesystem")
+                    or partition.get("fstype")
+                ),
+                "mountpoints": (
+                    host_mounts.get(
+                        f"/dev/{partition_name}",
+                        {},
+                    ).get("mountpoints")
+                    or partition.get("mountpoints")
+                    or [None]
+                ),
                 "logical_volumes": [],
             }
 
@@ -191,9 +277,21 @@ def get_disk_hardware():
                     "name": lv.get("name"),
                     "size": lv.get("size"),
                     "type": lv.get("type"),
-                    "filesystem": lv.get("fstype"),
-                    "mountpoints": lv.get("mountpoints")
-                    or [None],
+                    "filesystem": (
+                        host_mounts.get(
+                            f"/dev/mapper/{lv.get('name')}",
+                            {},
+                        ).get("filesystem")
+                        or lv.get("fstype")
+                    ),
+                    "mountpoints": (
+                        host_mounts.get(
+                            f"/dev/mapper/{lv.get('name')}",
+                            {},
+                        ).get("mountpoints")
+                        or lv.get("mountpoints")
+                        or [None]
+                    ),
                     "usage": None,
                 }
 

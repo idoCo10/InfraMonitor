@@ -4,6 +4,8 @@ import subprocess
 from datetime import timedelta
 from pathlib import Path
 
+from inframonitor_agent.host import host_path, is_host_mode
+
 
 def get_uptime():
     """Return system uptime as a human-readable string."""
@@ -16,7 +18,7 @@ def get_os_name():
     try:
         os_release = {}
 
-        for line in Path("/etc/os-release").read_text().splitlines():
+        for line in host_path("/etc/os-release").read_text().splitlines():
             if "=" in line:
                 key, value = line.split("=", 1)
                 os_release[key] = value.strip('"')
@@ -25,6 +27,37 @@ def get_os_name():
 
     except (FileNotFoundError, PermissionError):
         return platform.system()
+
+
+def get_vmware_tools_version_from_host():
+    status_path = host_path("/var/lib/dpkg/status")
+
+    try:
+        content = status_path.read_text()
+
+    except (FileNotFoundError, PermissionError, OSError):
+        return None
+
+    packages = content.split("\n\n")
+
+    for package in packages:
+        if not package.startswith("Package: open-vm-tools\n"):
+            continue
+
+        for line in package.splitlines():
+            if line.startswith("Version:"):
+                version = line.split(":", 1)[1].strip()
+
+                # Remove Debian/Ubuntu epoch prefix.
+                if ":" in version:
+                    version = version.split(":", 1)[1]
+
+                if "-" in version:
+                    version = version.split("-", 1)[0]
+
+                return version
+
+    return None
 
 
 def get_virtualization():
@@ -103,30 +136,35 @@ def get_virtualization():
 
     # VMware Tools version
     if virtualization == "VMware":
-        commands = [
-            ["vmware-toolbox-cmd", "-v"],
-            ["vmtoolsd", "--version"],
-        ]
 
-        for cmd in commands:
-            try:
-                result = subprocess.run(
-                    cmd,
-                    capture_output=True,
-                    text=True,
-                    timeout=5,
-                    check=True,
-                )
+        if is_host_mode():
+            vmware_tools_version = get_vmware_tools_version_from_host()
 
-                vmware_tools_version = result.stdout.strip()
-                break
+        else:
+            commands = [
+                ["vmware-toolbox-cmd", "-v"],
+                ["vmtoolsd", "--version"],
+            ]
 
-            except (
-                subprocess.CalledProcessError,
-                FileNotFoundError,
-                subprocess.TimeoutExpired,
-            ):
-                pass
+            for cmd in commands:
+                try:
+                    result = subprocess.run(
+                        cmd,
+                        capture_output=True,
+                        text=True,
+                        timeout=5,
+                        check=True,
+                    )
+
+                    vmware_tools_version = result.stdout.strip()
+                    break
+
+                except (
+                    subprocess.CalledProcessError,
+                    FileNotFoundError,
+                    subprocess.TimeoutExpired,
+                ):
+                    pass
 
     if virtualization == "VMware" and vmware_tools_version:
         version = vmware_tools_version.replace(
