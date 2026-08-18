@@ -11,11 +11,19 @@ dependencies = [
 [project.scripts]
 inframonitor = "inframonitor_agent.main:main"
 
+
 [project.optional-dependencies]
+backend = [
+    "fastapi",
+    "uvicorn",
+]
+
 dev = [
     "pytest",
     "ruff",
+    "httpx",
 ]
+
 
 [build-system]
 requires = ["setuptools>=61"]
@@ -26,3 +34,7 @@ where = ["agent"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+pythonpath = [
+    "agent",
+    "backend",
+]

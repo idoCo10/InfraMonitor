@@ -7,6 +7,8 @@ agent/inframonitor.egg-info/entry_points.txt
 agent/inframonitor.egg-info/requires.txt
 agent/inframonitor.egg-info/top_level.txt
 agent/inframonitor_agent/__init__.py
+agent/inframonitor_agent/client.py
+agent/inframonitor_agent/host.py
 agent/inframonitor_agent/main.py
 agent/inframonitor_agent/collectors/__init__.py
 agent/inframonitor_agent/collectors/cpu.py
@@ -14,6 +16,7 @@ agent/inframonitor_agent/collectors/disk.py
 agent/inframonitor_agent/collectors/memory.py
 agent/inframonitor_agent/collectors/network.py
 agent/inframonitor_agent/collectors/system.py
+tests/test_backend.py
 tests/test_cpu.py
 tests/test_disk.py
 tests/test_main.py
