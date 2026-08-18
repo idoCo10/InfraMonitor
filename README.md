@@ -4,7 +4,7 @@ InfraMonitor is a Linux infrastructure monitoring and inventory agent built with
 
 The agent collects system, CPU, memory, storage, virtualization, and network information from Linux hosts and exposes the collected data through both human-readable CLI output and structured JSON.
 
-The project is being developed as an end-to-end DevOps platform, with automated testing and CI already implemented and containerization, centralized monitoring, infrastructure as code, and Kubernetes deployment planned.
+The project is being developed as an end-to-end DevOps platform. Automated testing, CI, Docker containerization, host-aware container monitoring, and Docker Compose deployment are already implemented, with centralized monitoring, infrastructure as code, and Kubernetes deployment planned.
 
 ## Current Features
 
@@ -65,12 +65,30 @@ Some physical memory hardware information requires elevated privileges and may n
 - Structured JSON output
 - Standard command-line help
 
+### Containerization
+
+- Docker image support
+- Host-aware monitoring from inside the container
+- Read-only host filesystem access
+- Host network monitoring
+- Host disk, filesystem, and LVM monitoring
+- Docker Compose deployment
+- Containerized agent reports host information rather than container information
+
 ## Requirements
+
+### Native Installation
 
 - Linux
 - Python 3.11+
 - `pip`
 - `venv`
+
+### Container Deployment
+
+- Linux
+- Docker
+- Docker Compose v2
 
 InfraMonitor currently targets Linux systems.
 
@@ -102,6 +120,41 @@ python -m pip install -e .
 ```
 
 InfraMonitor is now available as a CLI command inside the virtual environment.
+
+## Docker Deployment
+
+InfraMonitor can run as a container while monitoring the underlying Linux host.
+
+On Ubuntu, install Docker and Docker Compose v2 if they are not already available:
+
+```bash
+sudo apt update
+sudo apt install docker.io docker-compose-v2
+```
+
+Ensure your user has permission to access Docker:
+
+```bash
+sudo usermod -aG docker $USER
+```
+
+Log out and back in for the group membership change to take effect.
+
+Build the InfraMonitor container:
+
+```bash
+docker compose build
+```
+
+Run the agent:
+
+```bash
+docker compose run --rm inframonitor
+```
+
+The Compose configuration provides the container with read-only access to the required host resources and uses the host network namespace so InfraMonitor reports information about the monitored Linux host rather than the container itself.
+
+The container intentionally avoids privileged mode and unrestricted block-device access. Some low-level hardware metadata may therefore differ from native execution.
 
 ## Usage
 
@@ -274,6 +327,7 @@ InfraMonitor/
 │       │   ├── network.py
 │       │   └── system.py
 │       ├── __init__.py
+│       ├── host.py
 │       └── main.py
 ├── tests/
 │   ├── test_cpu.py
@@ -282,32 +336,48 @@ InfraMonitor/
 │   ├── test_memory.py
 │   ├── test_network.py
 │   └── test_system.py
+├── .dockerignore
+├── compose.yaml
+├── Dockerfile
 ├── pyproject.toml
 └── README.md
 ```
 
 ## Architecture
 
-The current implementation consists of a standalone Linux agent.
+InfraMonitor currently supports both native execution and host-aware containerized execution.
 
 ```text
 Linux Host
     │
-    ▼
-InfraMonitor Agent
-    │
-    ├── System Collector
-    ├── CPU Collector
-    ├── Memory Collector
-    ├── Disk Collector
-    └── Network Collector
-            │
-            ▼
-      Structured Data
-        │         │
-        ▼         ▼
-    CLI Output   JSON
+    ├─────────────────────────────┐
+    │                             │
+    ▼                             ▼
+Native Python                Docker Container
+Execution                    (Host-Aware Mode)
+    │                             │
+    └──────────────┬──────────────┘
+                   ▼
+          InfraMonitor Agent
+                   │
+       ┌───────────┼───────────┐
+       ▼           ▼           ▼
+     System       CPU        Memory
+    Collector   Collector   Collector
+       │                       │
+       └──────┐         ┌──────┘
+              ▼         ▼
+             Disk     Network
+           Collector Collector
+                │
+                ▼
+         Structured Data
+           │         │
+           ▼         ▼
+       CLI Output   JSON
 ```
+
+In containerized mode, InfraMonitor uses host-aware filesystem paths, read-only host mounts, and host networking to collect information about the underlying Linux host rather than the container environment.
 
 The planned centralized architecture is:
 
@@ -347,11 +417,13 @@ The agent is being developed independently from the backend so that host data co
 
 ### Phase 2 — Application & Containers
 
+- [x] Dockerize InfraMonitor agent
+- [x] Host-aware container monitoring
+- [x] Docker Compose deployment
 - [ ] FastAPI backend
 - [ ] Agent-to-backend communication
 - [ ] PostgreSQL persistence
-- [ ] Dockerize application components
-- [ ] Docker Compose development environment
+- [ ] Multi-container development environment
 
 ### Phase 3 — CI/CD
 
@@ -395,14 +467,14 @@ The agent is being developed independently from the backend so that host data co
 - Ruff
 - Git
 - GitHub Actions
+- Docker
+- Docker Compose
 - Linux system utilities
 
 **Planned**
 
 - FastAPI
 - PostgreSQL
-- Docker
-- Docker Compose
 - Terraform
 - AWS
 - Kubernetes
