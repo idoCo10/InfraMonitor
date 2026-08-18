@@ -1,0 +1,12 @@
+services:
+  inframonitor:
+    build: .
+    image: inframonitor:latest
+    network_mode: host
+
+    environment:
+      INFRAMONITOR_HOST_ROOT: /host
+
+    volumes:
+      - /:/host:ro,rslave
+      - /proc:/host/proc:ro
