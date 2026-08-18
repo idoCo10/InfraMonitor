@@ -4,6 +4,10 @@ Version: 0.1.0
 Summary: Infrastructure monitoring and security visibility tool
 Requires-Python: >=3.11
 Requires-Dist: psutil
+Provides-Extra: backend
+Requires-Dist: fastapi; extra == "backend"
+Requires-Dist: uvicorn; extra == "backend"
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"
+Requires-Dist: httpx; extra == "dev"

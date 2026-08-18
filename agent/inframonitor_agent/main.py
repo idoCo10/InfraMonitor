@@ -1,6 +1,7 @@
 import argparse
 import json
 
+from inframonitor_agent.client import send_report
 from inframonitor_agent.collectors.cpu import collect_cpu_info
 from inframonitor_agent.collectors.disk import collect_disk_info
 from inframonitor_agent.collectors.memory import (
@@ -102,12 +103,34 @@ def main():
         help="Output system information as JSON",
     )
 
+    parser.add_argument(
+        "--send",
+        metavar="BACKEND_URL",
+        help="Send collected system information to the InfraMonitor backend",
+    )
+
     args = parser.parse_args()
 
     if args.json:
         data = collect_all_info()
         print(json.dumps(data, indent=2))
         return
+
+
+    if args.send:
+        data = collect_all_info()
+
+        result = send_report(
+            data,
+            args.send,
+        )
+
+        print(
+            f"Report sent successfully "
+            f"for host: {result.get('hostname')}"
+        )
+        return
+
 
     # =========================
     # System

@@ -1,5 +1,10 @@
 psutil
 
+[backend]
+fastapi
+uvicorn
+
 [dev]
 pytest
 ruff
+httpx
