@@ -560,25 +560,25 @@ Docker Compose
 
 ┌─────────────────────────┐
 │ InfraMonitor Agent      │
-│                        │
-│ CPU / RAM / Disk / Net │
+│                         │
+│ CPU / RAM / Disk / Net  │
 └────────────┬────────────┘
              │
              │ every 60 seconds
              ▼
 ┌─────────────────────────┐
 │ FastAPI Backend         │
-│                        │
-│ REST API               │
-│ Alembic migrations     │
+│                         │
+│ REST API                │
+│ Alembic migrations      │
 └────────────┬────────────┘
              │
              ▼
 ┌─────────────────────────┐
 │ PostgreSQL              │
-│                        │
-│ hosts                  │
-│ reports                │
+│                         │
+│ hosts                   │
+│ reports                 │
 └─────────────────────────┘
 ```
 
