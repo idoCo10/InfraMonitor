@@ -1,10 +1,12 @@
 # InfraMonitor
 
-InfraMonitor is a Linux infrastructure monitoring and inventory agent built with Python.
+InfraMonitor is a Linux infrastructure monitoring and inventory platform built with Python.
 
-The agent collects system, CPU, memory, storage, virtualization, and network information from Linux hosts and exposes the collected data through both human-readable CLI output and structured JSON.
+The InfraMonitor agent collects system, CPU, memory, storage, virtualization, and network information from Linux hosts and supports both human-readable CLI output and structured JSON.
 
-The project is being developed as an end-to-end DevOps platform. Automated testing, CI, Docker containerization, host-aware container monitoring, and Docker Compose deployment are already implemented, with centralized monitoring, infrastructure as code, and Kubernetes deployment planned.
+InfraMonitor also includes a FastAPI backend and PostgreSQL database for centralized host monitoring and historical report storage. The complete stack can run through Docker Compose, with agents automatically collecting and sending monitoring reports at configurable intervals.
+
+The project is being developed as an end-to-end DevOps platform, combining infrastructure monitoring, APIs, databases, containerization, automated testing, CI/CD, and future infrastructure-as-code and orchestration technologies.
 
 ## Current Features
 
@@ -63,16 +65,52 @@ Some physical memory hardware information requires elevated privileges and may n
 
 - Human-readable system report
 - Structured JSON output
+- Backend report submission
+- Scheduled monitoring reports
 - Standard command-line help
+
+### Backend API
+
+- FastAPI REST API
+- Monitoring report ingestion
+- Host discovery and tracking
+- Latest host monitoring snapshot
+- Historical reports per host
+- Health and database connectivity checks
+
+Current API endpoints include:
+
+```text
+POST /api/v1/reports
+GET  /api/v1/reports
+GET  /api/v1/hosts
+GET  /api/v1/hosts/{hostname}
+GET  /api/v1/hosts/{hostname}/reports
+GET  /health
+```
+
+### Database
+
+- PostgreSQL persistence
+- Host inventory
+- Historical monitoring reports
+- Host-to-report relationships
+- SQLAlchemy models
+- Alembic database migrations
+- Automatic schema migration during backend container startup
 
 ### Containerization
 
 - Docker image support
-- Host-aware monitoring from inside the container
+- Host-aware monitoring from inside the agent container
 - Read-only host filesystem access
 - Host network monitoring
 - Host disk, filesystem, and LVM monitoring
+- Containerized FastAPI backend
+- Containerized PostgreSQL
 - Docker Compose deployment
+- Service health checks and startup dependencies
+- Automatic agent restart
 - Containerized agent reports host information rather than container information
 
 ## Requirements
@@ -119,11 +157,17 @@ Install InfraMonitor:
 python -m pip install -e .
 ```
 
+For backend and development dependencies:
+
+```bash
+python -m pip install -e ".[backend,dev]"
+```
+
 InfraMonitor is now available as a CLI command inside the virtual environment.
 
 ## Docker Deployment
 
-InfraMonitor can run as a container while monitoring the underlying Linux host.
+InfraMonitor can deploy the monitoring agent, FastAPI backend, and PostgreSQL database through Docker Compose.
 
 On Ubuntu, install Docker and Docker Compose v2 if they are not already available:
 
@@ -140,19 +184,40 @@ sudo usermod -aG docker $USER
 
 Log out and back in for the group membership change to take effect.
 
-Build the InfraMonitor container:
+Build and start the complete InfraMonitor stack:
 
 ```bash
-docker compose build
+docker compose up -d --build
 ```
 
-Run the agent:
+Check service status:
 
 ```bash
-docker compose run --rm inframonitor
+docker compose ps
 ```
 
-The Compose configuration provides the container with read-only access to the required host resources and uses the host network namespace so InfraMonitor reports information about the monitored Linux host rather than the container itself.
+View logs:
+
+```bash
+docker compose logs -f
+```
+
+The Compose stack contains:
+
+```text
+InfraMonitor Agent
+        │
+        │ monitoring reports
+        ▼
+FastAPI Backend
+        │
+        ▼
+PostgreSQL
+```
+
+PostgreSQL is health-checked before the backend starts. The backend automatically applies Alembic migrations before starting FastAPI, and the monitoring agent waits for the backend to become healthy before beginning report submission.
+
+The agent uses host-aware mounts and host networking to collect information about the underlying Linux host rather than the container environment.
 
 The container intentionally avoids privileged mode and unrestricted block-device access. Some low-level hardware metadata may therefore differ from native execution.
 
@@ -170,13 +235,35 @@ Display structured JSON:
 inframonitor --json
 ```
 
+Send a report to the backend:
+
+```bash
+inframonitor --send http://127.0.0.1:8000
+```
+
+Send reports continuously:
+
+```bash
+inframonitor \
+  --send http://127.0.0.1:8000 \
+  --interval 60
+```
+
+The backend URL and reporting interval can also be configured using environment variables:
+
+```bash
+INFRAMONITOR_BACKEND_URL=http://127.0.0.1:8000
+INFRAMONITOR_INTERVAL=60
+inframonitor
+```
+
 Display CLI help:
 
 ```bash
 inframonitor --help
 ```
 
-Example output:
+## Example Agent Output
 
 ```text
 === System Information ===
@@ -261,12 +348,47 @@ Interface: ens33
   Usage:        Total: 538.2 MB (RX: 506.5 MB, TX: 31.7 MB)
 ```
 
-## Development
+## Backend API
 
-Install InfraMonitor with development dependencies:
+Check backend health:
 
 ```bash
-python -m pip install -e ".[dev]"
+curl http://127.0.0.1:8000/health
+```
+
+Example:
+
+```json
+{
+  "status": "ok",
+  "database": "connected"
+}
+```
+
+List monitored hosts:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/hosts
+```
+
+Get a host and its latest monitoring report:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/hosts/devops24
+```
+
+Get historical reports:
+
+```bash
+curl http://127.0.0.1:8000/api/v1/hosts/devops24/reports
+```
+
+## Development
+
+Install InfraMonitor with backend and development dependencies:
+
+```bash
+python -m pip install -e ".[backend,dev]"
 ```
 
 Run the test suite:
@@ -281,14 +403,43 @@ Run static analysis and linting:
 ruff check .
 ```
 
-The current test suite covers:
+The test suite covers:
 
 - System collection
 - CPU collection
 - Memory collection
 - Disk collection
 - Network collection
-- Main data collection and CLI functionality
+- Main data collection
+- CLI functionality
+- Scheduled report submission
+- Backend API
+- PostgreSQL persistence
+- Host management
+
+## Database Migrations
+
+InfraMonitor uses Alembic to manage PostgreSQL schema changes.
+
+Check the current migration:
+
+```bash
+alembic current
+```
+
+View migration heads:
+
+```bash
+alembic heads
+```
+
+Apply migrations:
+
+```bash
+alembic upgrade head
+```
+
+When running through Docker Compose, migrations are automatically applied before the FastAPI backend starts.
 
 ## Continuous Integration
 
@@ -301,9 +452,12 @@ The CI pipeline:
 
 1. Checks out the repository
 2. Sets up Python 3.12
-3. Installs InfraMonitor with development dependencies
-4. Runs Ruff
-5. Runs the pytest test suite
+3. Starts PostgreSQL
+4. Installs InfraMonitor with backend and development dependencies
+5. Applies Alembic migrations
+6. Runs Ruff
+7. Runs the pytest test suite
+8. Builds the Docker image
 
 Workflow configuration:
 
@@ -318,6 +472,7 @@ InfraMonitor/
 ├── .github/
 │   └── workflows/
 │       └── ci.yml
+│
 ├── agent/
 │   └── inframonitor_agent/
 │       ├── collectors/
@@ -327,16 +482,33 @@ InfraMonitor/
 │       │   ├── network.py
 │       │   └── system.py
 │       ├── __init__.py
+│       ├── client.py
 │       ├── host.py
 │       └── main.py
+│
+├── backend/
+│   ├── inframonitor_api/
+│   │   ├── database.py
+│   │   ├── main.py
+│   │   └── models.py
+│   └── Dockerfile
+│
+├── migrations/
+│   ├── versions/
+│   ├── env.py
+│   └── script.py.mako
+│
 ├── tests/
+│   ├── conftest.py
+│   ├── test_backend.py
 │   ├── test_cpu.py
 │   ├── test_disk.py
 │   ├── test_main.py
 │   ├── test_memory.py
 │   ├── test_network.py
 │   └── test_system.py
-├── .dockerignore
+│
+├── alembic.ini
 ├── compose.yaml
 ├── Dockerfile
 ├── pyproject.toml
@@ -345,58 +517,76 @@ InfraMonitor/
 
 ## Architecture
 
-InfraMonitor currently supports both native execution and host-aware containerized execution.
+InfraMonitor separates host monitoring from centralized storage and API functionality.
 
 ```text
-Linux Host
-    │
-    ├─────────────────────────────┐
-    │                             │
-    ▼                             ▼
-Native Python                Docker Container
-Execution                    (Host-Aware Mode)
-    │                             │
-    └──────────────┬──────────────┘
-                   ▼
-          InfraMonitor Agent
-                   │
-       ┌───────────┼───────────┐
-       ▼           ▼           ▼
-     System       CPU        Memory
-    Collector   Collector   Collector
-       │                       │
-       └──────┐         ┌──────┘
-              ▼         ▼
-             Disk     Network
-           Collector Collector
-                │
-                ▼
-         Structured Data
-           │         │
-           ▼         ▼
-       CLI Output   JSON
+                    Linux Host
+                        │
+                        ▼
+                InfraMonitor Agent
+                        │
+              Collect system metrics
+                        │
+                        ▼
+                 Monitoring Report
+                        │
+                        │ HTTP
+                        ▼
+                 FastAPI Backend
+                        │
+                        ▼
+                    PostgreSQL
+                        │
+              ┌─────────┴─────────┐
+              ▼                   ▼
+         Host Inventory      Report History
+              │                   │
+              └─────────┬─────────┘
+                        ▼
+                 REST API Layer
+                        │
+                        ▼
+               Future Dashboard
 ```
 
-In containerized mode, InfraMonitor uses host-aware filesystem paths, read-only host mounts, and host networking to collect information about the underlying Linux host rather than the container environment.
+The agent can run natively or inside a host-aware Docker container.
 
-The planned centralized architecture is:
+The backend is responsible for receiving reports, tracking monitored hosts, storing historical snapshots, and exposing monitoring information through the REST API.
+
+## Docker Architecture
 
 ```text
-Linux Hosts
-    │
-    │ InfraMonitor Agents
-    ▼
-Backend API
-    │
-    ▼
-PostgreSQL
-    │
-    ├── Monitoring / Metrics
-    │
-    └── Web Dashboard
+Docker Compose
+
+┌─────────────────────────┐
+│ InfraMonitor Agent      │
+│                        │
+│ CPU / RAM / Disk / Net │
+└────────────┬────────────┘
+             │
+             │ every 60 seconds
+             ▼
+┌─────────────────────────┐
+│ FastAPI Backend         │
+│                        │
+│ REST API               │
+│ Alembic migrations     │
+└────────────┬────────────┘
+             │
+             ▼
+┌─────────────────────────┐
+│ PostgreSQL              │
+│                        │
+│ hosts                  │
+│ reports                │
+└─────────────────────────┘
 ```
 
-The agent is being developed independently from the backend so that host data collection remains separate from storage, visualization, and deployment components.
+A fresh deployment can initialize the complete stack using:
+
+```bash
+docker compose up -d --build
+```
 
 ## Roadmap
 
@@ -415,22 +605,30 @@ The agent is being developed independently from the backend so that host data co
 - [x] Installable CLI
 - [x] Structured JSON output
 
-### Phase 2 — Application & Containers
+### Phase 2 — Backend & Containers
 
 - [x] Dockerize InfraMonitor agent
 - [x] Host-aware container monitoring
-- [x] Docker Compose deployment
-- [ ] FastAPI backend
-- [ ] Agent-to-backend communication
-- [ ] PostgreSQL persistence
-- [ ] Multi-container development environment
+- [x] FastAPI backend
+- [x] Agent-to-backend communication
+- [x] Scheduled agent reporting
+- [x] PostgreSQL persistence
+- [x] Host inventory and report history
+- [x] Alembic database migrations
+- [x] Containerized FastAPI backend
+- [x] Multi-container Docker Compose environment
+- [x] Automatic database migrations
+- [x] Container health checks and startup dependencies
+- [ ] Web monitoring dashboard
 
 ### Phase 3 — CI/CD
 
 - [x] GitHub Actions CI pipeline
 - [x] Automated linting
 - [x] Automated test execution
-- [ ] Automated Docker builds
+- [x] PostgreSQL integration testing
+- [x] Database migration testing
+- [x] Docker image build validation
 - [ ] Container registry
 - [ ] Automated deployment workflow
 
@@ -462,6 +660,10 @@ The agent is being developed independently from the backend so that host data co
 **Currently implemented**
 
 - Python
+- FastAPI
+- SQLAlchemy
+- PostgreSQL
+- Alembic
 - psutil
 - pytest
 - Ruff
@@ -473,8 +675,7 @@ The agent is being developed independently from the backend so that host data co
 
 **Planned**
 
-- FastAPI
-- PostgreSQL
+- Web dashboard
 - Terraform
 - AWS
 - Kubernetes
