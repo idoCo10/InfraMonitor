@@ -1,7 +1,7 @@
 from datetime import UTC, datetime
 from typing import Any
 
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from sqlalchemy import select
 
 from inframonitor_api.database import SessionLocal, check_database
@@ -111,3 +111,54 @@ def get_host_reports(hostname: str):
             }
             for report in reports
         ]        
+
+
+@app.get("/api/v1/hosts")
+def get_hosts():
+    with SessionLocal() as session:
+        hosts = session.scalars(
+            select(Host).order_by(Host.hostname)
+        ).all()
+
+        return [
+            {
+                "id": host.id,
+                "hostname": host.hostname,
+                "first_seen": host.first_seen,
+                "last_seen": host.last_seen,
+            }
+            for host in hosts
+        ]        
+
+
+@app.get("/api/v1/hosts/{hostname}")
+def get_host(hostname: str):
+    with SessionLocal() as session:
+        host = session.scalar(
+            select(Host).where(Host.hostname == hostname)
+        )
+
+        if host is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Host not found",
+            )
+
+        latest_report = session.scalar(
+            select(Report)
+            .where(Report.host_id == host.id)
+            .order_by(Report.received_at.desc())
+            .limit(1)
+        )
+
+        return {
+            "id": host.id,
+            "hostname": host.hostname,
+            "first_seen": host.first_seen,
+            "last_seen": host.last_seen,
+            "latest_report": (
+                latest_report.data
+                if latest_report
+                else None
+            ),
+        }        
