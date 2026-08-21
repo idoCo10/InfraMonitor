@@ -1,0 +1,182 @@
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: Arial, sans-serif;
+    background: #0d1117;
+    color: #e6edf3;
+}
+
+header {
+    border-bottom: 1px solid #30363d;
+    background: #161b22;
+}
+
+.header-content {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+h1 {
+    margin: 0;
+    font-size: 28px;
+}
+
+.subtitle {
+    margin: 6px 0 0;
+    color: #8b949e;
+}
+
+.summary {
+    color: #8b949e;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 24px;
+}
+
+.section-title {
+    margin-bottom: 16px;
+    color: #8b949e;
+    font-size: 13px;
+    font-weight: bold;
+    letter-spacing: 1px;
+}
+
+.host-card {
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    padding: 22px;
+    margin-bottom: 16px;
+}
+
+.host-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.hostname {
+    font-size: 20px;
+    font-weight: bold;
+}
+
+.os {
+    margin-top: 5px;
+    color: #8b949e;
+}
+
+.status {
+    font-weight: bold;
+}
+
+.status-online {
+    color: #3fb950;
+}
+
+.status-offline {
+    color: #f85149;
+}
+
+.metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+}
+
+.metric-label {
+    margin-bottom: 7px;
+    color: #8b949e;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.metric-value {
+    font-size: 22px;
+}
+
+.no-hosts {
+    padding: 40px;
+    text-align: center;
+    background: #161b22;
+    border: 1px solid #30363d;
+    border-radius: 10px;
+    color: #8b949e;
+}
+
+@media (max-width: 700px) {
+    .header-content {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .metrics {
+        grid-template-columns: 1fr;
+    }
+}
+
+.hostname a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.hostname a:hover {
+    text-decoration: underline;
+}
+
+/* Utilization bars */
+
+.utilization {
+    margin-top: 10px;
+}
+
+.progress {
+    width: 100%;
+    height: 8px;
+    background: #30363d;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.progress-bar {
+    height: 100%;
+    border-radius: 4px;
+}
+
+.progress-normal {
+    background: #3fb950;
+}
+
+.progress-warning {
+    background: #d29922;
+}
+
+.progress-critical {
+    background: #f85149;
+}
+
+.utilization-critical {
+    color: #f85149;
+}
+
+.utilization-warning {
+    color: #d29922;
+}
+
+
+.next-update {
+    margin-left: 12px;
+    color: #8b949e;
+    font-size: 13px;
+}

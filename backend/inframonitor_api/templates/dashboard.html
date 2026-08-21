@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>InfraMonitor</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='/css/dashboard.css') }}"
+    >
+</head>
+
+<body>
+
+<header>
+    <div class="header-content">
+
+        <div>
+            <h1>InfraMonitor</h1>
+            <p class="subtitle">Infrastructure Monitoring</p>
+        </div>
+
+        <div class="summary">
+            {{ hosts | selectattr("status", "equalto", "Online") | list | length }}
+            Online
+        </div>
+
+    </div>
+</header>
+
+<main class="container">
+
+    <div class="section-title">
+        MONITORED HOSTS
+    </div>
+
+    {% for host in hosts %}
+
+    <div
+        class="host-card"
+        data-hostname="{{ host.hostname }}"
+    >
+
+        <div class="host-header">
+
+            <div>
+                <div class="hostname">
+                    <a href="/hosts/{{ host.hostname }}">
+                        {{ host.hostname }}
+                    </a>
+                </div>
+
+                <div class="os">
+                    {{ host.os }}
+                </div>
+            </div>
+
+        {% if host.status == "Online" %}
+            <span class="status status-online host-status">
+                ● Online
+            </span>
+        {% else %}
+            <span class="status status-offline host-status">
+                ● Offline
+            </span>
+        {% endif %}
+
+        <span class="next-update">
+            Next update: --s
+        </span>
+
+        </div>
+
+        <div class="metrics">
+
+            <div>
+                <div class="metric-label">CPU</div>
+
+                <div class="metric-value host-cpu">
+                    {% if host.cpu is not none %}
+                        {{ "%.1f"|format(host.cpu) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">RAM</div>
+
+                <div class="metric-value host-memory">
+                    {% if host.memory is not none %}
+                        {{ "%.1f"|format(host.memory) }}%
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">LAST SEEN</div>
+
+                <div class="metric-value host-last-seen">
+                    {{ host.last_seen.strftime("%H:%M:%S") }}
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    {% else %}
+
+    <div class="no-hosts">
+        No monitored hosts yet.
+    </div>
+
+    {% endfor %}
+
+</main>
+
+<script>
+async function updateDashboard() {
+    try {
+        const response = await fetch("/api/v1/dashboard");
+
+        if (!response.ok) {
+            return;
+        }
+
+        const hosts = await response.json();
+
+        for (const host of hosts) {
+            const card = document.querySelector(
+                `[data-hostname="${host.hostname}"]`
+            );
+
+            if (!card) {
+                continue;
+            }
+
+            const cpu = card.querySelector(".host-cpu");
+            const memory = card.querySelector(".host-memory");
+            const status = card.querySelector(".host-status");
+            const lastSeen = card.querySelector(".host-last-seen");
+            const nextUpdate = card.querySelector(".next-update");
+
+            cpu.textContent =
+                host.cpu !== null
+                    ? `${host.cpu.toFixed(1)}%`
+                    : "N/A";
+
+            memory.textContent =
+                host.memory !== null
+                    ? `${host.memory.toFixed(1)}%`
+                    : "N/A";
+
+            if (host.status === "Online") {
+                status.textContent = "● Online";
+                status.className =
+                    "status status-online host-status";
+            } else {
+                status.textContent = "● Offline";
+                status.className =
+                    "status status-offline host-status";
+            }
+
+            const seen = new Date(host.last_seen);
+
+            lastSeen.textContent =
+                seen.toLocaleTimeString();
+
+            nextUpdate.textContent =
+                `Next update: ${host.next_update}s`;
+        }
+    } catch (error) {
+        console.error(
+            "Dashboard update failed:",
+            error
+        );
+    }
+}
+
+updateDashboard();
+
+// Lightweight dashboard refresh.
+// Monitoring collection interval is still learned
+// dynamically from report timestamps.
+setInterval(updateDashboard, 1000);
+</script>
+
+
+</body>
+</html>
