@@ -10,6 +10,7 @@ Requires-Dist: uvicorn; extra == "backend"
 Requires-Dist: sqlalchemy; extra == "backend"
 Requires-Dist: psycopg[binary]; extra == "backend"
 Requires-Dist: alembic; extra == "backend"
+Requires-Dist: jinja2; extra == "backend"
 Provides-Extra: dev
 Requires-Dist: pytest; extra == "dev"
 Requires-Dist: ruff; extra == "dev"

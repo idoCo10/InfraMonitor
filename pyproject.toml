@@ -18,7 +18,8 @@ backend = [
     "uvicorn",
     "sqlalchemy",
     "psycopg[binary]",   
-    "alembic",     
+    "alembic", 
+    "jinja2",    
 ]
 
 dev = [

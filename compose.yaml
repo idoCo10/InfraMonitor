@@ -13,7 +13,7 @@ services:
     environment:
       INFRAMONITOR_HOST_ROOT: /host
       INFRAMONITOR_BACKEND_URL: http://127.0.0.1:8000
-      INFRAMONITOR_INTERVAL: 60
+      INFRAMONITOR_INTERVAL: 5
 
     volumes:
       - /:/host:ro,rslave

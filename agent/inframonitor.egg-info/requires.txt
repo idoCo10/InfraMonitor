@@ -6,6 +6,7 @@ uvicorn
 sqlalchemy
 psycopg[binary]
 alembic
+jinja2
 
 [dev]
 pytest

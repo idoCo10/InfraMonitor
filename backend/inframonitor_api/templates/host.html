@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>{{ host.hostname }} - InfraMonitor</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', path='/css/dashboard.css') }}"
+    >
+</head>
+
+<body>
+
+<header>
+    <div class="header-content">
+        <div>
+            <h1>{{ host.hostname }}</h1>
+            <p class="subtitle">
+                {{ host.report.get("system", {}).get("os", "Unknown") }}
+            </p>
+        </div>
+
+        {% if host.status == "Online" %}
+            <div class="status status-online">● Online</div>
+        {% else %}
+            <div class="status status-offline">● Offline</div>
+        {% endif %}
+    </div>
+</header>
+
+<main class="container">
+
+    <p>
+        <a href="/">← Back to dashboard</a>
+    </p>
+
+    {% set system = host.report.get("system", {}) %}
+    {% set cpu = host.report.get("cpu", {}) %}
+    {% set memory = host.report.get("memory", {}) %}
+    {% set ram = memory.get("ram", {}) %}
+    {% set swap = memory.get("swap", {}) %}
+    {% set disk_data = host.report.get("disk", {}) %}
+    {% set network = host.report.get("network", {}) %}
+
+    <!-- SYSTEM -->
+
+    <div class="host-card">
+        <div class="section-title">SYSTEM</div>
+
+        <div class="metrics">
+            <div>
+                <div class="metric-label">HOSTNAME</div>
+                <div class="metric-value">{{ host.hostname }}</div>
+            </div>
+
+            <div>
+                <div class="metric-label">OS</div>
+                <div class="metric-value">
+                    {{ system.get("os", "Unknown") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">KERNEL</div>
+                <div class="metric-value">
+                    {{ system.get("kernel", "Unknown") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">ARCHITECTURE</div>
+                <div class="metric-value">
+                    {{ system.get("architecture", "Unknown") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">UPTIME</div>
+                <div class="metric-value">
+                    {{ system.get("uptime", "Unknown") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">VIRTUALIZATION</div>
+                <div class="metric-value">
+                    {{ system.get("virtualization", "None") }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CPU -->
+
+    <div class="host-card">
+        <div class="section-title">CPU</div>
+
+        <div class="metrics">
+            <div>
+                <div class="metric-label">MODEL</div>
+                <div class="metric-value">
+                    {{ cpu.get("model", "Unknown") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">UTILIZATION</div>
+
+                {% set cpu_usage = cpu.get("utilization_percent", 0) %}
+
+                <div class="metric-value
+                    {% if cpu_usage >= 85 %}
+                        utilization-critical
+                    {% elif cpu_usage >= 70 %}
+                        utilization-warning
+                    {% endif %}
+                ">
+                    {{ "%.1f"|format(cpu_usage) }}%
+                </div>
+
+                <div class="utilization">
+                    <div class="progress">
+                        <div
+                            class="progress-bar
+                            {% if cpu_usage >= 85 %}
+                                progress-critical
+                            {% elif cpu_usage >= 70 %}
+                                progress-warning
+                            {% else %}
+                                progress-normal
+                            {% endif %}
+                            "
+                            style="width: {{ cpu_usage }}%"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">LOGICAL CORES</div>
+                <div class="metric-value">
+                    {{ cpu.get("logical_cores", "N/A") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">PHYSICAL CORES</div>
+                <div class="metric-value">
+                    {{ cpu.get("physical_cores", "N/A") }}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">FREQUENCY</div>
+                <div class="metric-value">
+                    {% if cpu.get("frequency", {}).get("current_mhz") %}
+                        {{ "%.0f"|format(cpu.get("frequency", {}).get("current_mhz")) }} MHz
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">LOAD AVG</div>
+                <div class="metric-value">
+                    {{ cpu.get("load_average", {}).get("1min", "N/A") }}
+                    /
+                    {{ cpu.get("load_average", {}).get("5min", "N/A") }}
+                    /
+                    {{ cpu.get("load_average", {}).get("15min", "N/A") }}
+                </div>
+            </div>
+        </div>
+
+        <div style="margin-top: 20px;">
+            <div class="metric-label">PER-CORE UTILIZATION</div>
+
+            {% for value in cpu.get("per_core_utilization", []) %}
+                <div>
+                    Core {{ loop.index0 }}:
+                    {{ "%.1f"|format(value) }}%
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- MEMORY -->
+
+    <div class="host-card">
+        <div class="section-title">MEMORY</div>
+
+        <div class="metrics">
+            <div>
+                <div class="metric-label">TOTAL</div>
+                <div class="metric-value">
+                    {{ "%.2f"|format(ram.get("total_bytes", 0) / (1024 ** 3)) }} GB
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">USED</div>
+                <div class="metric-value">
+                    {{ "%.2f"|format(ram.get("used_bytes", 0) / (1024 ** 3)) }} GB
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">AVAILABLE</div>
+                <div class="metric-value">
+                    {{ "%.2f"|format(ram.get("available_bytes", 0) / (1024 ** 3)) }} GB
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">UTILIZATION</div>
+
+                {% set ram_usage = ram.get("utilization_percent", 0) %}
+
+                <div class="metric-value
+                    {% if ram_usage >= 85 %}
+                        utilization-critical
+                    {% elif ram_usage >= 70 %}
+                        utilization-warning
+                    {% endif %}
+                ">
+                    {{ "%.1f"|format(ram_usage) }}%
+                </div>
+
+                <div class="utilization">
+                    <div class="progress">
+                        <div
+                            class="progress-bar
+                            {% if ram_usage >= 85 %}
+                                progress-critical
+                            {% elif ram_usage >= 70 %}
+                                progress-warning
+                            {% else %}
+                                progress-normal
+                            {% endif %}
+                            "
+                            style="width: {{ ram_usage }}%"
+                        ></div>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">SWAP TOTAL</div>
+                <div class="metric-value">
+                    {{ "%.2f"|format(swap.get("total_bytes", 0) / (1024 ** 3)) }} GB
+                </div>
+            </div>
+
+            <div>
+                <div class="metric-label">SWAP USED</div>
+                <div class="metric-value">
+                    {{ "%.2f"|format(swap.get("used_bytes", 0) / (1024 ** 3)) }} GB
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STORAGE -->
+
+    <div class="host-card">
+        <div class="section-title">STORAGE</div>
+
+        {% for disk in disk_data.get("disks", []) %}
+
+            <div style="margin-bottom: 28px;">
+
+                <div class="hostname">
+                    {{ disk.get("name") }}
+                    — {{ disk.get("size") }}
+                </div>
+
+                <div class="os">
+                    {{ disk.get("vendor") or "" }}
+                    {{ disk.get("model") or "" }}
+                    · {{ disk.get("media_type") or "Unknown" }}
+                    · {{ disk.get("bus") or "Unknown" }}
+                </div>
+
+                {% for partition in disk.get("partitions", []) %}
+
+                    <div style="margin: 16px 0 0 16px;">
+                        <strong>{{ partition.get("name") }}</strong>
+                        — {{ partition.get("size") }}
+
+                        {% if partition.get("filesystem") %}
+                            · {{ partition.get("filesystem") }}
+                        {% endif %}
+
+                        {% if partition.get("mountpoints") %}
+                            {% for mountpoint in partition.get("mountpoints") %}
+                                {% if mountpoint %}
+                                    · {{ mountpoint }}
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+
+                        {% if partition.get("usage") %}
+
+                            {% set partition_usage = partition.get("usage").get(
+                                "utilization_percent",
+                                0
+                            ) %}
+
+                            <div class="os">
+                                Used:
+                                {{ "%.2f"|format(
+                                    partition.get("usage").get("used_bytes", 0)
+                                    / (1024 ** 3)
+                                ) }}
+                                GB
+
+                                ·
+
+                                <span class="
+                                    {% if partition_usage >= 85 %}
+                                        utilization-critical
+                                    {% elif partition_usage >= 70 %}
+                                        utilization-warning
+                                    {% endif %}
+                                ">
+                                    {{ "%.1f"|format(partition_usage) }}%
+                                </span>
+                            </div>
+
+                            <div class="utilization">
+                                <div class="progress">
+                                    <div
+                                        class="progress-bar
+                                        {% if partition_usage >= 85 %}
+                                            progress-critical
+                                        {% elif partition_usage >= 70 %}
+                                            progress-warning
+                                        {% else %}
+                                            progress-normal
+                                        {% endif %}
+                                        "
+                                        style="width: {{ partition_usage }}%"
+                                    ></div>
+                                </div>
+                            </div>
+
+                        {% endif %}
+                    </div>
+
+                    {% for lv in partition.get("logical_volumes", []) %}
+
+                        <div style="margin: 12px 0 0 36px;">
+                            ↳ <strong>{{ lv.get("name") }}</strong>
+                            — {{ lv.get("size") }}
+
+                            {% if lv.get("filesystem") %}
+                                · {{ lv.get("filesystem") }}
+                            {% endif %}
+
+                            {% for mountpoint in lv.get("mountpoints", []) %}
+                                {% if mountpoint %}
+                                    · {{ mountpoint }}
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if lv.get("usage") %}
+
+                                {% set lv_usage = lv.get("usage").get(
+                                    "utilization_percent",
+                                    0
+                                ) %}
+
+                                <div class="os">
+                                    Used:
+                                    {{ "%.2f"|format(
+                                        lv.get("usage").get("used_bytes", 0)
+                                        / (1024 ** 3)
+                                    ) }}
+                                    GB
+
+                                    ·
+
+                                    <span class="
+                                        {% if lv_usage >= 85 %}
+                                            utilization-critical
+                                        {% elif lv_usage >= 70 %}
+                                            utilization-warning
+                                        {% endif %}
+                                    ">
+                                        {{ "%.1f"|format(lv_usage) }}%
+                                    </span>
+                                </div>
+
+                                <div class="utilization">
+                                    <div class="progress">
+                                        <div
+                                            class="progress-bar
+                                            {% if lv_usage >= 85 %}
+                                                progress-critical
+                                            {% elif lv_usage >= 70 %}
+                                                progress-warning
+                                            {% else %}
+                                                progress-normal
+                                            {% endif %}
+                                            "
+                                            style="width: {{ lv_usage }}%"
+                                        ></div>
+                                    </div>
+                                </div>
+
+                            {% endif %}
+                        </div>
+
+                    {% endfor %}
+
+                {% endfor %}
+
+            </div>
+
+        {% endfor %}
+    </div>
+
+    <!-- NETWORK -->
+
+    <div class="host-card">
+        <div class="section-title">NETWORK</div>
+
+        {% for interface in network.get("interfaces", []) %}
+
+            <div style="margin-bottom: 22px;">
+
+                <div class="hostname">
+                    {{ interface.get("name") }}
+
+                    {% if interface.get("is_up") %}
+                        <span class="status-online">● UP</span>
+                    {% else %}
+                        <span class="status-offline">● DOWN</span>
+                    {% endif %}
+                </div>
+
+                <div class="metrics" style="margin-top: 12px;">
+
+                    <div>
+                        <div class="metric-label">SPEED</div>
+                        <div>
+                            {% if interface.get("speed_mbps", 0) > 0 %}
+                                {{ interface.get("speed_mbps") }} Mbps
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">MTU</div>
+                        <div>{{ interface.get("mtu") }}</div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">MAC</div>
+                        <div>
+                            {{ interface.get("addresses", {}).get("mac", "N/A") }}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">IPv4</div>
+                        <div>
+                            {% if interface.get("addresses", {}).get("ipv4") %}
+                                {{ interface.get("addresses", {}).get("ipv4") | join(", ") }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">RX</div>
+                        <div>
+                            {{ "%.2f"|format(
+                                interface.get("usage", {}).get("rx_bytes", 0)
+                                / (1024 ** 2)
+                            ) }}
+                            MB
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">TX</div>
+                        <div>
+                            {{ "%.2f"|format(
+                                interface.get("usage", {}).get("tx_bytes", 0)
+                                / (1024 ** 2)
+                            ) }}
+                            MB
+                        </div>
+                    </div>
+
+                </div>
+
+            </div>
+
+        {% endfor %}
+    </div>
+
+</main>
+
+</body>
+</html>
