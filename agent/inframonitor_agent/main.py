@@ -1,5 +1,6 @@
 import argparse
 import json
+import os
 import time
 
 from inframonitor_agent.client import send_report
@@ -107,12 +108,14 @@ def main():
     parser.add_argument(
         "--send",
         metavar="BACKEND_URL",
+        default=os.getenv("INFRAMONITOR_BACKEND_URL"),
         help="Send collected system information to the InfraMonitor backend",
     )
 
     parser.add_argument(
         "--interval",
         type=int,
+        default=int(os.getenv("INFRAMONITOR_INTERVAL", "0")),
         help="Send monitoring reports repeatedly at this interval in seconds",
     )
 
@@ -129,13 +132,33 @@ def main():
         if args.interval:
             while True:
                 data = collect_all_info()
-                send_report(data, args.send)
+
+                result = send_report(
+                    data,
+                    args.send,
+                )
+
+                print(
+                    f"Report sent successfully "
+                    f"for host: {result.get('hostname')}",
+                    flush=True,
+                )
 
                 time.sleep(args.interval)
 
         else:
             data = collect_all_info()
-            send_report(data, args.send)
+
+            result = send_report(
+                data,
+                args.send,
+            )
+
+            print(
+                f"Report sent successfully "
+                f"for host: {result.get('hostname')}",
+                flush=True,
+            )
 
         return
 

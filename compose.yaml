@@ -3,9 +3,12 @@ services:
     build: .
     image: inframonitor:latest
     network_mode: host
+    restart: unless-stopped
 
     environment:
       INFRAMONITOR_HOST_ROOT: /host
+      INFRAMONITOR_BACKEND_URL: http://127.0.0.1:8000
+      INFRAMONITOR_INTERVAL: 60
 
     volumes:
       - /:/host:ro,rslave
