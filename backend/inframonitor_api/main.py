@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from inframonitor_api.database import SessionLocal, check_database
 from inframonitor_api.models import Host, Report
@@ -22,6 +22,18 @@ app = FastAPI(
     title="InfraMonitor API",
     version="0.1.0",
 )
+
+@app.middleware("http")
+async def disable_cache(request: Request, call_next):
+    response = await call_next(request)
+
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate, max-age=0"
+    )
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    return response
 
 app.mount(
     "/static",
@@ -288,7 +300,23 @@ def host_details(request: Request, hostname: str):
     )    
 
 @app.get("/api/v1/hosts/{hostname}/metrics")
-def get_host_metrics(hostname: str):
+def get_host_metrics(hostname: str, range: str = "5m"):
+    ranges = {
+        "5m": timedelta(minutes=5),
+        "15m": timedelta(minutes=15),
+        "1h": timedelta(hours=1),
+        "6h": timedelta(hours=6),
+        "24h": timedelta(hours=24),
+    }
+
+    if range not in ranges:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid range. Use: 5m, 15m, 1h, 6h, 24h",
+        )
+
+    since = datetime.now(UTC) - ranges[range]
+
     with SessionLocal() as session:
         host = session.scalar(
             select(Host).where(Host.hostname == hostname)
@@ -302,9 +330,11 @@ def get_host_metrics(hostname: str):
 
         reports = session.scalars(
             select(Report)
-            .where(Report.host_id == host.id)
+            .where(
+                Report.host_id == host.id,
+                Report.received_at >= since,
+            )
             .order_by(Report.received_at.asc())
-            .limit(500)
         ).all()
 
         metrics = []
@@ -318,13 +348,42 @@ def get_host_metrics(hostname: str):
                     "cpu": data.get("cpu", {}).get(
                         "utilization_percent"
                     ),
-                    "memory": data.get("memory", {})
-                    .get("ram", {})
-                    .get("utilization_percent"),
+                    "memory": (
+                        data.get("memory", {})
+                        .get("ram", {})
+                        .get("utilization_percent")
+                    ),
                 }
             )
 
-        return metrics    
+        return metrics
+
+
+@app.delete("/api/v1/hosts/{hostname}")
+def delete_host(hostname: str):
+    with SessionLocal() as session:
+        host = session.scalar(
+            select(Host).where(Host.hostname == hostname)
+        )
+
+        if host is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Host not found",
+            )
+
+        # Reports must be removed first because they reference host.id.
+        session.execute(
+            delete(Report).where(Report.host_id == host.id)
+        )
+
+        session.delete(host)
+        session.commit()
+
+    return {
+        "status": "deleted",
+        "hostname": hostname,
+    }
 
 
 @app.get("/api/v1/dashboard")

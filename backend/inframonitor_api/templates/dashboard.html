@@ -22,9 +22,18 @@
             <p class="subtitle">Infrastructure Monitoring</p>
         </div>
 
-        <div class="summary">
-            {{ hosts | selectattr("status", "equalto", "Online") | list | length }}
+        <div class="summary dashboard-summary">
+            <span id="online-count">
+                {{ hosts | selectattr("status", "equalto", "Online") | list | length }}
+            </span>
             Online
+
+            <span class="summary-separator">•</span>
+
+            <span id="host-count">
+                {{ hosts | length }}
+            </span>
+            Hosts
         </div>
 
     </div>
@@ -39,13 +48,14 @@
     {% for host in hosts %}
 
     <div
-        class="host-card"
+        class="host-card dashboard-host-card"
         data-hostname="{{ host.hostname }}"
     >
 
-        <div class="host-header">
+        <div class="dashboard-host-header">
 
-            <div>
+            <div class="dashboard-host-identity">
+
                 <div class="hostname">
                     <a href="/hosts/{{ host.hostname }}">
                         {{ host.hostname }}
@@ -55,27 +65,46 @@
                 <div class="os">
                     {{ host.os }}
                 </div>
+
             </div>
 
-        {% if host.status == "Online" %}
-            <span class="status status-online host-status">
-                ● Online
-            </span>
-        {% else %}
-            <span class="status status-offline host-status">
-                ● Offline
-            </span>
-        {% endif %}
 
-        <span class="next-update">
-            Next update: --s
-        </span>
+            <div class="dashboard-host-actions">
+
+                <div class="host-live-state">
+
+                    {% if host.status == "Online" %}
+                        <span class="status status-online host-status">
+                            ● Online
+                        </span>
+                    {% else %}
+                        <span class="status status-offline host-status">
+                            ● Offline
+                        </span>
+                    {% endif %}
+
+                    <span class="next-update">
+                        Next update: --s
+                    </span>
+
+                </div>
+
+                <button
+                    class="delete-host-button"
+                    data-delete-host="{{ host.hostname }}"
+                    type="button"
+                >
+                    Delete
+                </button>
+
+            </div>
 
         </div>
 
-        <div class="metrics">
 
-            <div>
+        <div class="dashboard-metrics">
+
+            <div class="dashboard-metric">
                 <div class="metric-label">CPU</div>
 
                 <div class="metric-value host-cpu">
@@ -87,7 +116,8 @@
                 </div>
             </div>
 
-            <div>
+
+            <div class="dashboard-metric">
                 <div class="metric-label">RAM</div>
 
                 <div class="metric-value host-memory">
@@ -99,11 +129,12 @@
                 </div>
             </div>
 
-            <div>
+
+            <div class="dashboard-metric">
                 <div class="metric-label">LAST SEEN</div>
 
                 <div class="metric-value host-last-seen">
-                    {{ host.last_seen.strftime("%H:%M:%S") }}
+                    {{ host.last_seen.strftime("%d/%m/%Y %H:%M:%S") }}
                 </div>
             </div>
 
@@ -170,11 +201,20 @@ async function updateDashboard() {
             const seen = new Date(host.last_seen);
 
             lastSeen.textContent =
-                seen.toLocaleTimeString();
+                seen.toLocaleString("en-GB", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                    hour: "2-digit",
+                    minute: "2-digit",
+                    second: "2-digit",
+                    hour12: false
+                });
 
             nextUpdate.textContent =
                 `Next update: ${host.next_update}s`;
         }
+        updateDashboardSummary();
     } catch (error) {
         console.error(
             "Dashboard update failed:",
@@ -184,6 +224,86 @@ async function updateDashboard() {
 }
 
 updateDashboard();
+
+
+document.querySelectorAll(".delete-host-button").forEach(button => {
+    button.addEventListener("click", async () => {
+        const hostname = button.dataset.deleteHost;
+
+        const approved = window.confirm(
+            `Permanently delete "${hostname}"?\n\n` +
+            "This will delete the host and ALL of its historical reports from the database.\n\n" +
+            "This action cannot be undone."
+        );
+
+        if (!approved) {
+            return;
+        }
+
+        button.disabled = true;
+        button.textContent = "Deleting...";
+
+        try {
+            const response = await fetch(
+                `/api/v1/hosts/${encodeURIComponent(hostname)}`,
+                {
+                    method: "DELETE"
+                }
+            );
+
+            if (!response.ok) {
+                const error = await response.json();
+
+                alert(
+                    error.detail || "Could not delete host."
+                );
+
+                button.disabled = false;
+                button.textContent = "Delete";
+
+                return;
+            }
+
+            const card = button.closest(".dashboard-host-card");
+
+            if (card) {
+                card.remove();
+            }
+
+            updateDashboardSummary();
+
+        } catch (error) {
+            console.error(
+                "Host deletion failed:",
+                error
+            );
+
+            alert("Could not delete host.");
+
+            button.disabled = false;
+            button.textContent = "Delete";
+        }
+    });
+});
+
+
+function updateDashboardSummary() {
+    const cards = document.querySelectorAll(
+        ".dashboard-host-card"
+    );
+
+    const online = document.querySelectorAll(
+        ".dashboard-host-card .status-online"
+    );
+
+    document.getElementById("host-count").textContent =
+        cards.length;
+
+    document.getElementById("online-count").textContent =
+        online.length;
+}
+
+updateDashboardSummary();
 
 // Lightweight dashboard refresh.
 // Monitoring collection interval is still learned
