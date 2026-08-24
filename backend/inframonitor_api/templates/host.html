@@ -102,7 +102,7 @@
             <div>
                 <div class="metric-label">MODEL</div>
                 <div class="metric-value">
-                    {{ cpu.get("model", "Unknown") }}
+                    {{ cpu.get("model", "N/A").split(" CPU @")[0] }}
                 </div>
             </div>
 
@@ -165,27 +165,61 @@
             </div>
 
             <div>
-                <div class="metric-label">LOAD AVG</div>
-                <div class="metric-value">
-                    {{ cpu.get("load_average", {}).get("1min", "N/A") }}
-                    /
-                    {{ cpu.get("load_average", {}).get("5min", "N/A") }}
-                    /
-                    {{ cpu.get("load_average", {}).get("15min", "N/A") }}
+                <div class="metric-label">LOAD AVERAGE</div>
+
+                <div class="load-average-grid">
+                    <div>
+                        <span>1m</span>
+                        <strong>{{ cpu.get("load_average", {}).get("1min", "N/A") }}</strong>
+                    </div>
+
+                    <div>
+                        <span>5m</span>
+                        <strong>{{ cpu.get("load_average", {}).get("5min", "N/A") }}</strong>
+                    </div>
+
+                    <div>
+                        <span>15m</span>
+                        <strong>{{ cpu.get("load_average", {}).get("15min", "N/A") }}</strong>
+                    </div>
                 </div>
             </div>
         </div>
 
-        <div style="margin-top: 20px;">
+        <div class="cpu-cores">
             <div class="metric-label">PER-CORE UTILIZATION</div>
 
-            {% for value in cpu.get("per_core_utilization", []) %}
-                <div>
-                    Core {{ loop.index0 }}:
-                    {{ "%.1f"|format(value) }}%
-                </div>
-            {% endfor %}
+            <div class="cpu-core-grid">
+                {% for value in cpu.get("per_core_utilization", []) %}
+                    <div class="cpu-core-item">
+                        <span>Core {{ loop.index0 }}</span>
+                        <strong>{{ "%.1f"|format(value) }}%</strong>
+                    </div>
+                {% endfor %}
+            </div>
         </div>
+
+        <div class="metric-history">
+
+            <div class="history-header">
+                <div class="history-title">CPU HISTORY</div>
+
+                <div class="history-controls">
+                    <button class="range-button cpu-range active" data-range="5m">5m</button>
+                    <button class="range-button cpu-range" data-range="15m">15m</button>
+                    <button class="range-button cpu-range" data-range="1h">1h</button>
+                    <button class="range-button cpu-range" data-range="6h">6h</button>
+                    <button class="range-button cpu-range" data-range="24h">24h</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="cpuChart"></canvas>
+            </div>
+
+        </div>        
+
+
     </div>
 
     <!-- MEMORY -->
@@ -262,6 +296,28 @@
                 </div>
             </div>
         </div>
+
+        <div class="metric-history">
+
+            <div class="history-header">
+                <div class="history-title">RAM HISTORY</div>
+
+                <div class="history-controls">
+                    <button class="range-button memory-range active" data-range="5m">5m</button>
+                    <button class="range-button memory-range" data-range="15m">15m</button>
+                    <button class="range-button memory-range" data-range="1h">1h</button>
+                    <button class="range-button memory-range" data-range="6h">6h</button>
+                    <button class="range-button memory-range" data-range="24h">24h</button>
+                </div>
+            </div>
+
+            <div class="chart-container">
+                <canvas id="memoryChart"></canvas>
+            </div>
+
+        </div>
+
+
     </div>
 
     <!-- STORAGE -->
@@ -424,32 +480,64 @@
         {% endfor %}
     </div>
 
-    <!-- NETWORK -->
+<!-- NETWORK -->
 
-    <div class="host-card">
-        <div class="section-title">NETWORK</div>
+<div class="host-card">
+    <div class="section-title">NETWORK</div>
 
-        {% for interface in network.get("interfaces", []) %}
+    {% set interfaces = network.get("interfaces", []) %}
 
-            <div style="margin-bottom: 22px;">
+    <!-- Primary interface -->
 
-                <div class="hostname">
-                    {{ interface.get("name") }}
+    {% for interface in interfaces %}
+
+        {% set name = interface.get("name", "") %}
+
+        {% set is_primary =
+            interface.get("is_up")
+            and interface.get("addresses", {}).get("ipv4")
+            and not name.startswith("docker")
+            and not name.startswith("br-")
+            and not name.startswith("veth")
+            and name != "lo"
+        %}
+
+        {% if is_primary %}
+
+            <div class="primary-interface">
+
+                <div class="primary-interface-header">
+                    <div>
+                        <div class="interface-title">
+                            {{ name }}
+
+                            <span class="primary-badge">
+                                Primary
+                            </span>
+                        </div>
+                    </div>
 
                     {% if interface.get("is_up") %}
-                        <span class="status-online">● UP</span>
+                        <span class="status status-online">
+                            ● UP
+                        </span>
                     {% else %}
-                        <span class="status-offline">● DOWN</span>
+                        <span class="status status-offline">
+                            ● DOWN
+                        </span>
                     {% endif %}
                 </div>
 
-                <div class="metrics" style="margin-top: 12px;">
+
+                <!-- Address row -->
+
+                <div class="network-address-row">
 
                     <div>
-                        <div class="metric-label">SPEED</div>
-                        <div>
-                            {% if interface.get("speed_mbps", 0) > 0 %}
-                                {{ interface.get("speed_mbps") }} Mbps
+                        <div class="metric-label">IPv4</div>
+                        <div class="network-metric-value">
+                            {% if interface.get("addresses", {}).get("ipv4") %}
+                                {{ interface.get("addresses", {}).get("ipv4")[0] }}
                             {% else %}
                                 N/A
                             {% endif %}
@@ -457,31 +545,44 @@
                     </div>
 
                     <div>
-                        <div class="metric-label">MTU</div>
-                        <div>{{ interface.get("mtu") }}</div>
+                        <div class="metric-label">IPv6</div>
+                        <div class="network-metric-value">
+                            {% if interface.get("addresses", {}).get("ipv6") %}
+                                {{ interface.get("addresses", {}).get("ipv6")[0] }}
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
                     </div>
 
                     <div>
                         <div class="metric-label">MAC</div>
-                        <div>
+                        <div class="network-metric-value">
                             {{ interface.get("addresses", {}).get("mac", "N/A") }}
                         </div>
                     </div>
 
+                </div>
+
+
+                <!-- Traffic row -->
+
+                <div class="network-traffic-row">
+
                     <div>
-                        <div class="metric-label">IPv4</div>
-                        <div>
-                            {% if interface.get("addresses", {}).get("ipv4") %}
-                                {{ interface.get("addresses", {}).get("ipv4") | join(", ") }}
-                            {% else %}
-                                N/A
-                            {% endif %}
+                        <div class="metric-label">TOTAL TRAFFIC</div>
+                        <div class="network-metric-value">
+                            {{ "%.2f"|format(
+                                interface.get("usage", {}).get("total_bytes", 0)
+                                / (1024 ** 2)
+                            ) }}
+                            MB
                         </div>
                     </div>
 
                     <div>
                         <div class="metric-label">RX</div>
-                        <div>
+                        <div class="network-metric-value">
                             {{ "%.2f"|format(
                                 interface.get("usage", {}).get("rx_bytes", 0)
                                 / (1024 ** 2)
@@ -492,7 +593,7 @@
 
                     <div>
                         <div class="metric-label">TX</div>
-                        <div>
+                        <div class="network-metric-value">
                             {{ "%.2f"|format(
                                 interface.get("usage", {}).get("tx_bytes", 0)
                                 / (1024 ** 2)
@@ -501,33 +602,182 @@
                         </div>
                     </div>
 
+                    <div>
+                        <div class="metric-label">SPEED</div>
+                        <div class="network-metric-value">
+                            {% if interface.get("speed_mbps", 0) > 0 %}
+                                {{ interface.get("speed_mbps") }} Mbps
+                            {% else %}
+                                N/A
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="metric-label">MTU</div>
+                        <div class="network-metric-value">
+                            {{ interface.get("mtu", "N/A") }}
+                        </div>
+                    </div>
+
                 </div>
 
             </div>
 
+        {% endif %}
+
+    {% endfor %}
+
+
+    <!-- Other interfaces -->
+
+    <div class="secondary-network-title">
+        OTHER INTERFACES
+    </div>
+
+    <div class="secondary-interfaces">
+
+        {% for interface in interfaces %}
+
+            {% set name = interface.get("name", "") %}
+
+            {% set is_primary =
+                interface.get("is_up")
+                and interface.get("addresses", {}).get("ipv4")
+                and not name.startswith("docker")
+                and not name.startswith("br-")
+                and not name.startswith("veth")
+                and name != "lo"
+            %}
+
+            {% if not is_primary %}
+
+                <details class="secondary-interface">
+
+                    <summary>
+
+                        <span class="secondary-interface-name">
+                            {{ name }}
+                        </span>
+
+                        {% if interface.get("is_up") %}
+                            <span class="status status-online">
+                                ● UP
+                            </span>
+                        {% else %}
+                            <span class="status status-offline">
+                                ● DOWN
+                            </span>
+                        {% endif %}
+
+                    </summary>
+
+
+                    <div class="secondary-interface-details">
+
+                        <!-- Address row -->
+
+                        <div class="network-address-row">
+
+                            <div>
+                                <div class="metric-label">IPv4</div>
+                                <div class="network-metric-value">
+                                    {% if interface.get("addresses", {}).get("ipv4") %}
+                                        {{ interface.get("addresses", {}).get("ipv4")[0] }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">IPv6</div>
+                                <div class="network-metric-value">
+                                    {% if interface.get("addresses", {}).get("ipv6") %}
+                                        {{ interface.get("addresses", {}).get("ipv6")[0] }}
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">MAC</div>
+                                <div class="network-metric-value">
+                                    {{ interface.get("addresses", {}).get("mac", "N/A") }}
+                                </div>
+                            </div>
+
+                        </div>
+
+
+                        <!-- Traffic row -->
+
+                        <div class="network-traffic-row">
+
+                            <div>
+                                <div class="metric-label">TOTAL TRAFFIC</div>
+                                <div class="network-metric-value">
+                                    {{ "%.2f"|format(
+                                        interface.get("usage", {}).get("total_bytes", 0)
+                                        / (1024 ** 2)
+                                    ) }}
+                                    MB
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">RX</div>
+                                <div class="network-metric-value">
+                                    {{ "%.2f"|format(
+                                        interface.get("usage", {}).get("rx_bytes", 0)
+                                        / (1024 ** 2)
+                                    ) }}
+                                    MB
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">TX</div>
+                                <div class="network-metric-value">
+                                    {{ "%.2f"|format(
+                                        interface.get("usage", {}).get("tx_bytes", 0)
+                                        / (1024 ** 2)
+                                    ) }}
+                                    MB
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">SPEED</div>
+                                <div class="network-metric-value">
+                                    {% if interface.get("speed_mbps", 0) > 0 %}
+                                        {{ interface.get("speed_mbps") }} Mbps
+                                    {% else %}
+                                        N/A
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div>
+                                <div class="metric-label">MTU</div>
+                                <div class="network-metric-value">
+                                    {{ interface.get("mtu", "N/A") }}
+                                </div>
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </details>
+
+            {% endif %}
+
         {% endfor %}
+
     </div>
 
-<div class="host-card">
-    <div class="section-title">HISTORY</div>
-
-    <div class="history-controls">
-        <button class="range-button active" data-range="5m">5m</button>
-        <button class="range-button" data-range="15m">15m</button>
-        <button class="range-button" data-range="1h">1h</button>
-        <button class="range-button" data-range="6h">6h</button>
-        <button class="range-button" data-range="24h">24h</button>
-    </div>
-
-    <div style="margin-bottom: 32px;">
-        <div class="metric-label">CPU UTILIZATION</div>
-        <canvas id="cpuChart"></canvas>
-    </div>
-
-    <div>
-        <div class="metric-label">RAM UTILIZATION</div>
-        <canvas id="memoryChart"></canvas>
-    </div>
 </div>
 
 
@@ -538,7 +788,8 @@
 
 <script>
 const hostname = "{{ host.hostname }}";
-let selectedRange = "5m";
+let cpuRange = "5m";
+let memoryRange = "5m";
 
 const cpuChart = new Chart(
     document.getElementById("cpuChart"),
@@ -553,11 +804,41 @@ const cpuChart = new Chart(
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             animation: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            elements: {
+                line: {
+                    borderWidth: 2
+                },
+                point: {
+                    radius: 0,
+                    hoverRadius: 4
+                }
+            },
             scales: {
+                x: {
+                    ticks: {
+                        maxTicksLimit: 10,
+                        autoSkip: true,
+                        maxRotation: 0,
+                        minRotation: 0
+                    }
+                },
                 y: {
                     beginAtZero: true,
-                    max: 100
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
                 }
             }
         }
@@ -577,11 +858,41 @@ const memoryChart = new Chart(
         },
         options: {
             responsive: true,
+            maintainAspectRatio: false,
             animation: false,
+            interaction: {
+                mode: "index",
+                intersect: false
+            },
+            plugins: {
+                legend: {
+                    display: false
+                }
+            },
+            elements: {
+                line: {
+                    borderWidth: 2
+                },
+                point: {
+                    radius: 0,
+                    hoverRadius: 4
+                }
+            },
             scales: {
+                x: {
+                    ticks: {
+                        maxTicksLimit: 10,
+                        autoSkip: true,
+                        maxRotation: 0,
+                        minRotation: 0
+                    }
+                },
                 y: {
                     beginAtZero: true,
-                    max: 100
+                    max: 100,
+                    ticks: {
+                        stepSize: 20
+                    }
                 }
             }
         }
@@ -589,10 +900,10 @@ const memoryChart = new Chart(
 );
 
 
-async function updateCharts() {
+async function updateCpuChart() {
     try {
         const response = await fetch(
-            `/api/v1/hosts/${hostname}/metrics?range=${selectedRange}`
+            `/api/v1/hosts/${hostname}/metrics?range=${cpuRange}`
         );
 
         if (!response.ok) {
@@ -601,50 +912,101 @@ async function updateCharts() {
 
         const metrics = await response.json();
 
-        const labels = metrics.map(item => {
-            const date = new Date(item.timestamp);
-
-            return date.toLocaleTimeString();
+        cpuChart.data.labels = metrics.map(item => {
+            return new Date(item.timestamp).toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            });
         });
 
-        cpuChart.data.labels = labels;
         cpuChart.data.datasets[0].data =
             metrics.map(item => item.cpu);
 
-        memoryChart.data.labels = labels;
-        memoryChart.data.datasets[0].data =
-            metrics.map(item => item.memory);
-
         cpuChart.update();
-        memoryChart.update();
 
     } catch (error) {
         console.error(
-            "Failed to update charts:",
+            "Failed to update CPU chart:",
             error
         );
     }
 }
-document.querySelectorAll(".range-button").forEach(button => {
-    button.addEventListener("click", () => {
-        selectedRange = button.dataset.range;
 
-        document.querySelectorAll(".range-button").forEach(item => {
+
+async function updateMemoryChart() {
+    try {
+        const response = await fetch(
+            `/api/v1/hosts/${hostname}/metrics?range=${memoryRange}`
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const metrics = await response.json();
+
+        memoryChart.data.labels = metrics.map(item => {
+            return new Date(item.timestamp).toLocaleTimeString("en-GB", {
+                hour: "2-digit",
+                minute: "2-digit",
+                second: "2-digit",
+                hour12: false
+            });
+        });
+
+        memoryChart.data.datasets[0].data =
+            metrics.map(item => item.memory);
+
+        memoryChart.update();
+
+    } catch (error) {
+        console.error(
+            "Failed to update RAM chart:",
+            error
+        );
+    }
+}
+
+
+document.querySelectorAll(".cpu-range").forEach(button => {
+    button.addEventListener("click", () => {
+        cpuRange = button.dataset.range;
+
+        document.querySelectorAll(".cpu-range").forEach(item => {
             item.classList.remove("active");
         });
 
         button.classList.add("active");
 
-        updateCharts();
+        updateCpuChart();
     });
 });
 
-updateCharts();
 
-setInterval(
-    updateCharts,
-    5000
-);
+document.querySelectorAll(".memory-range").forEach(button => {
+    button.addEventListener("click", () => {
+        memoryRange = button.dataset.range;
+
+        document.querySelectorAll(".memory-range").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        updateMemoryChart();
+    });
+});
+
+
+updateCpuChart();
+updateMemoryChart();
+
+setInterval(updateCpuChart, 5000);
+setInterval(updateMemoryChart, 5000);
+
+
 </script>
 
 </body>

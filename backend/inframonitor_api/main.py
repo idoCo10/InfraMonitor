@@ -6,7 +6,7 @@ from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import select
+from sqlalchemy import delete, select
 
 from inframonitor_api.database import SessionLocal, check_database
 from inframonitor_api.models import Host, Report
@@ -22,6 +22,18 @@ app = FastAPI(
     title="InfraMonitor API",
     version="0.1.0",
 )
+
+@app.middleware("http")
+async def disable_cache(request: Request, call_next):
+    response = await call_next(request)
+
+    response.headers["Cache-Control"] = (
+        "no-store, no-cache, must-revalidate, max-age=0"
+    )
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+
+    return response
 
 app.mount(
     "/static",
@@ -345,6 +357,34 @@ def get_host_metrics(hostname: str, range: str = "5m"):
             )
 
         return metrics
+
+
+@app.delete("/api/v1/hosts/{hostname}")
+def delete_host(hostname: str):
+    with SessionLocal() as session:
+        host = session.scalar(
+            select(Host).where(Host.hostname == hostname)
+        )
+
+        if host is None:
+            raise HTTPException(
+                status_code=404,
+                detail="Host not found",
+            )
+
+        # Reports must be removed first because they reference host.id.
+        session.execute(
+            delete(Report).where(Report.host_id == host.id)
+        )
+
+        session.delete(host)
+        session.commit()
+
+    return {
+        "status": "deleted",
+        "hostname": hostname,
+    }
+
 
 @app.get("/api/v1/dashboard")
 def dashboard_data():
