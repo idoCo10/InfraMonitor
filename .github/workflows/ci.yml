@@ -130,5 +130,5 @@ jobs:
           context: .
           push: true
           tags: |
-            ghcr.io/${{ github.repository_owner }}/inframonitor:latest
-            ghcr.io/${{ github.repository_owner }}/inframonitor:${{ github.sha }}
+            ghcr.io/idoco10/inframonitor:latest
+            ghcr.io/idoco10/inframonitor:${{ github.sha }}
