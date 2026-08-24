@@ -508,7 +508,144 @@
         {% endfor %}
     </div>
 
+<div class="host-card">
+    <div class="section-title">HISTORY</div>
+
+    <div class="history-controls">
+        <button class="range-button active" data-range="5m">5m</button>
+        <button class="range-button" data-range="15m">15m</button>
+        <button class="range-button" data-range="1h">1h</button>
+        <button class="range-button" data-range="6h">6h</button>
+        <button class="range-button" data-range="24h">24h</button>
+    </div>
+
+    <div style="margin-bottom: 32px;">
+        <div class="metric-label">CPU UTILIZATION</div>
+        <canvas id="cpuChart"></canvas>
+    </div>
+
+    <div>
+        <div class="metric-label">RAM UTILIZATION</div>
+        <canvas id="memoryChart"></canvas>
+    </div>
+</div>
+
+
 </main>
+
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script>
+const hostname = "{{ host.hostname }}";
+let selectedRange = "5m";
+
+const cpuChart = new Chart(
+    document.getElementById("cpuChart"),
+    {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: "CPU %",
+                data: []
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    }
+);
+
+const memoryChart = new Chart(
+    document.getElementById("memoryChart"),
+    {
+        type: "line",
+        data: {
+            labels: [],
+            datasets: [{
+                label: "RAM %",
+                data: []
+            }]
+        },
+        options: {
+            responsive: true,
+            animation: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            }
+        }
+    }
+);
+
+
+async function updateCharts() {
+    try {
+        const response = await fetch(
+            `/api/v1/hosts/${hostname}/metrics?range=${selectedRange}`
+        );
+
+        if (!response.ok) {
+            return;
+        }
+
+        const metrics = await response.json();
+
+        const labels = metrics.map(item => {
+            const date = new Date(item.timestamp);
+
+            return date.toLocaleTimeString();
+        });
+
+        cpuChart.data.labels = labels;
+        cpuChart.data.datasets[0].data =
+            metrics.map(item => item.cpu);
+
+        memoryChart.data.labels = labels;
+        memoryChart.data.datasets[0].data =
+            metrics.map(item => item.memory);
+
+        cpuChart.update();
+        memoryChart.update();
+
+    } catch (error) {
+        console.error(
+            "Failed to update charts:",
+            error
+        );
+    }
+}
+document.querySelectorAll(".range-button").forEach(button => {
+    button.addEventListener("click", () => {
+        selectedRange = button.dataset.range;
+
+        document.querySelectorAll(".range-button").forEach(item => {
+            item.classList.remove("active");
+        });
+
+        button.classList.add("active");
+
+        updateCharts();
+    });
+});
+
+updateCharts();
+
+setInterval(
+    updateCharts,
+    5000
+);
+</script>
 
 </body>
 </html>

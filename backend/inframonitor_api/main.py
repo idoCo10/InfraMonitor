@@ -1,4 +1,4 @@
-from datetime import UTC, datetime
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -288,7 +288,23 @@ def host_details(request: Request, hostname: str):
     )    
 
 @app.get("/api/v1/hosts/{hostname}/metrics")
-def get_host_metrics(hostname: str):
+def get_host_metrics(hostname: str, range: str = "5m"):
+    ranges = {
+        "5m": timedelta(minutes=5),
+        "15m": timedelta(minutes=15),
+        "1h": timedelta(hours=1),
+        "6h": timedelta(hours=6),
+        "24h": timedelta(hours=24),
+    }
+
+    if range not in ranges:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid range. Use: 5m, 15m, 1h, 6h, 24h",
+        )
+
+    since = datetime.now(UTC) - ranges[range]
+
     with SessionLocal() as session:
         host = session.scalar(
             select(Host).where(Host.hostname == hostname)
@@ -302,9 +318,11 @@ def get_host_metrics(hostname: str):
 
         reports = session.scalars(
             select(Report)
-            .where(Report.host_id == host.id)
+            .where(
+                Report.host_id == host.id,
+                Report.received_at >= since,
+            )
             .order_by(Report.received_at.asc())
-            .limit(500)
         ).all()
 
         metrics = []
@@ -318,14 +336,15 @@ def get_host_metrics(hostname: str):
                     "cpu": data.get("cpu", {}).get(
                         "utilization_percent"
                     ),
-                    "memory": data.get("memory", {})
-                    .get("ram", {})
-                    .get("utilization_percent"),
+                    "memory": (
+                        data.get("memory", {})
+                        .get("ram", {})
+                        .get("utilization_percent")
+                    ),
                 }
             )
 
-        return metrics    
-
+        return metrics
 
 @app.get("/api/v1/dashboard")
 def dashboard_data():
