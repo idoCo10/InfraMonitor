@@ -78,17 +78,6 @@ Some physical memory hardware information requires elevated privileges and may n
 - Historical reports per host
 - Health and database connectivity checks
 
-Current API endpoints include:
-
-```text
-POST /api/v1/reports
-GET  /api/v1/reports
-GET  /api/v1/hosts
-GET  /api/v1/hosts/{hostname}
-GET  /api/v1/hosts/{hostname}/reports
-GET  /health
-```
-
 ### Database
 
 - PostgreSQL persistence
@@ -244,9 +233,7 @@ inframonitor --send http://127.0.0.1:8000
 Send reports continuously:
 
 ```bash
-inframonitor \
-  --send http://127.0.0.1:8000 \
-  --interval 60
+inframonitor --send http://127.0.0.1:8000 --interval 60
 ```
 
 The backend URL and reporting interval can also be configured using environment variables:
@@ -619,7 +606,7 @@ docker compose up -d --build
 - [x] Multi-container Docker Compose environment
 - [x] Automatic database migrations
 - [x] Container health checks and startup dependencies
-- [ ] Web monitoring dashboard
+- [x] Web monitoring dashboard
 
 ### Phase 3 — CI/CD
 
