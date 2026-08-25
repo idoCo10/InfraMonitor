@@ -92,6 +92,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./agent/Dockerfile          
           push: false
           tags: inframonitor:${{ github.sha }}
 
@@ -128,6 +129,7 @@ jobs:
         uses: docker/build-push-action@v6
         with:
           context: .
+          file: ./agent/Dockerfile
           push: true
           tags: |
             ghcr.io/idoco10/inframonitor:latest
