@@ -8,6 +8,7 @@ agent/inframonitor.egg-info/requires.txt
 agent/inframonitor.egg-info/top_level.txt
 agent/inframonitor_agent/__init__.py
 agent/inframonitor_agent/client.py
+agent/inframonitor_agent/display.py
 agent/inframonitor_agent/host.py
 agent/inframonitor_agent/main.py
 agent/inframonitor_agent/collectors/__init__.py
