@@ -11,8 +11,6 @@ dependencies = [
 [project.scripts]
 inframonitor = "inframonitor_agent.main:main"
 
-xxx
-
 [project.optional-dependencies]
 backend = [
     "fastapi",

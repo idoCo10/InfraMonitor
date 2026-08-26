@@ -1,6 +1,6 @@
 services:
   inframonitor:
-    image: ghcr.io/idoco10/inframonitor-agent:latest
+    image: ghcr.io/idoco10/inframonitor-agent:${IMAGE_TAG}
     container_name: inframonitor-agent
     network_mode: host
     restart: unless-stopped
@@ -42,7 +42,7 @@ services:
 
 
   backend:
-    image: ghcr.io/idoco10/inframonitor-backend:latest
+    image: ghcr.io/idoco10/inframonitor-backend:${IMAGE_TAG}
     container_name: inframonitor-backend
     restart: unless-stopped
 
