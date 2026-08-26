@@ -1,8 +1,9 @@
+import os
 from datetime import UTC, datetime, timedelta
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
-import os
-from importlib.metadata import version
+
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,8 +12,6 @@ from sqlalchemy import delete, select
 
 from inframonitor_api.database import SessionLocal, check_database
 from inframonitor_api.models import Host, Report
-
-
 
 BASE_DIR = Path(__file__).resolve().parent
 
