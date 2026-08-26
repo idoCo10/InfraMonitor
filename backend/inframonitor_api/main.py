@@ -1,4 +1,6 @@
+import os
 from datetime import UTC, datetime, timedelta
+from importlib.metadata import version
 from pathlib import Path
 from typing import Any
 
@@ -12,6 +14,15 @@ from inframonitor_api.database import SessionLocal, check_database
 from inframonitor_api.models import Host, Report
 
 BASE_DIR = Path(__file__).resolve().parent
+
+
+BASE_VERSION = version("inframonitor")
+APP_VERSION = os.getenv("INFRAMONITOR_VERSION") or f"{BASE_VERSION}-dev"
+BUILD_TIME = os.getenv("INFRAMONITOR_BUILD_TIME") or None
+
+
+
+
 
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates"
@@ -244,6 +255,8 @@ def dashboard(request: Request):
         name="dashboard.html",
         context={
             "hosts": dashboard_hosts,
+            "version": APP_VERSION,
+            "build_time": BUILD_TIME,
         },
     )
 

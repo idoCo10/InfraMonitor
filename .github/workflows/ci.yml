@@ -149,12 +149,67 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set build metadata
+        run: |
+          VERSION=$(python -c "import tomllib; print(tomllib.load(open('pyproject.toml','rb'))['project']['version'])")
+          BUILD_TIME=$(TZ=Asia/Bangkok date '+%d/%m/%y %H:%M:%S')
+
+          echo "INFRAMONITOR_VERSION=$VERSION" >> "$GITHUB_ENV"
+          echo "INFRAMONITOR_BUILD_TIME=$BUILD_TIME" >> "$GITHUB_ENV"
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           file: ${{ matrix.dockerfile }}
           push: true
+          build-args: |
+            INFRAMONITOR_VERSION=${{ env.INFRAMONITOR_VERSION }}
+            INFRAMONITOR_BUILD_TIME=${{ env.INFRAMONITOR_BUILD_TIME }}          
           tags: |
             ghcr.io/idoco10/${{ matrix.image }}:latest
             ghcr.io/idoco10/${{ matrix.image }}:${{ github.sha }}
+
+
+  # ---------------------------------------------------------
+  # DEPLOY
+  # Runs only after images are published to main
+  # ---------------------------------------------------------
+
+  deploy:
+    name: Deploy to AWS
+    runs-on: ubuntu-latest
+
+    needs:
+      - publish
+
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    steps:
+      - name: Configure SSH
+        run: |
+          mkdir -p ~/.ssh
+
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_ed25519
+          chmod 600 ~/.ssh/id_ed25519
+
+          ssh-keyscan -H "${{ secrets.EC2_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Deploy InfraMonitor
+        run: |
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << 'EOF'
+            set -e
+
+            cd ~/inframonitor
+
+            curl -fsSL https://raw.githubusercontent.com/idoCo10/InfraMonitor/main/deploy/server/compose.yaml -o compose.yaml
+
+            sudo docker compose pull
+            sudo docker compose up -d
+
+            sudo docker compose ps
+          EOF
+
+      - name: Verify deployment
+        run: |
+          curl --fail --retry 10 --retry-delay 5 https://api.icedev.site/health            

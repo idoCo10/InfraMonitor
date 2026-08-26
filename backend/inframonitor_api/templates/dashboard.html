@@ -20,6 +20,13 @@
         <div>
             <h1>InfraMonitor</h1>
             <p class="subtitle">Infrastructure Monitoring</p>
+
+            <div class="build-info">
+                v{{ version }}
+                {% if build_time %}
+                    [Build time: {{ build_time }}]
+                {% endif %}
+            </div>
         </div>
 
         <div class="summary dashboard-summary">
