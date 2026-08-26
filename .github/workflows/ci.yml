@@ -197,12 +197,18 @@ jobs:
 
       - name: Deploy InfraMonitor
         run: |
-          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << 'EOF'
+          ssh "${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}" << EOF
             set -e
 
             cd ~/inframonitor
 
-            curl -fsSL https://raw.githubusercontent.com/idoCo10/InfraMonitor/main/deploy/server/compose.yaml -o compose.yaml
+            curl -fsSL \
+              https://raw.githubusercontent.com/idoCo10/InfraMonitor/main/deploy/server/compose.yaml \
+              -o compose.yaml
+
+            sed -i \
+              's/^IMAGE_TAG=.*/IMAGE_TAG=${{ github.sha }}/' \
+              .env
 
             sudo docker compose pull
             sudo docker compose up -d
