@@ -1,7 +1,8 @@
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
-
+import os
+from importlib.metadata import version
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -11,7 +12,18 @@ from sqlalchemy import delete, select
 from inframonitor_api.database import SessionLocal, check_database
 from inframonitor_api.models import Host, Report
 
+
+
 BASE_DIR = Path(__file__).resolve().parent
+
+
+BASE_VERSION = version("inframonitor")
+APP_VERSION = os.getenv("INFRAMONITOR_VERSION") or f"{BASE_VERSION}-dev"
+BUILD_TIME = os.getenv("INFRAMONITOR_BUILD_TIME") or None
+
+
+
+
 
 templates = Jinja2Templates(
     directory=BASE_DIR / "templates"
@@ -244,6 +256,8 @@ def dashboard(request: Request):
         name="dashboard.html",
         context={
             "hosts": dashboard_hosts,
+            "version": APP_VERSION,
+            "build_time": BUILD_TIME,
         },
     )
 

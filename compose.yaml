@@ -44,7 +44,7 @@ services:
   backend:
     build:
       context: .
-      dockerfile: backend/Dockerfile
+      dockerfile: backend/Dockerfile    
     image: inframonitor-backend:latest
     container_name: inframonitor-backend
     restart: unless-stopped
