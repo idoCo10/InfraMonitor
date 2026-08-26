@@ -1,0 +1,15 @@
+services:
+  agent:
+    image: ghcr.io/idoco10/inframonitor-agent:latest
+    container_name: inframonitor-agent
+    network_mode: host
+    restart: unless-stopped
+
+    environment:
+      INFRAMONITOR_HOST_ROOT: /host
+      INFRAMONITOR_BACKEND_URL: ${INFRAMONITOR_BACKEND_URL}
+      INFRAMONITOR_INTERVAL: ${INFRAMONITOR_INTERVAL}
+
+    volumes:
+      - /:/host:ro,rslave
+      - /proc:/host/proc:ro
